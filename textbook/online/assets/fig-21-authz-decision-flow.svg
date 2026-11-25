@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220" width="820" height="220" role="img" aria-label="Deny-by-Default Authorization Decision Pipeline">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 1.8; rx: 8; }
+    .ok { fill: #f0fdf4; stroke: #16a34a; stroke-width: 1.8; rx: 8; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10.5px; fill: #334155; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#a21); }
+  </style>
+  <defs><marker id="a21" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="820" height="220" fill="#ffffff"/>
+  <text x="410" y="24" class="lbl" style="font-size:15px;">Figure 7.2: Deny-by-Default Server-Side Authorization Decision Pipeline</text>
+
+  <rect x="20" y="60" width="160" height="95" class="box"/>
+  <text x="100" y="88" class="lbl">1. Incoming Request</text>
+  <text x="100" y="108" class="sub">GET /api/invoices/42</text>
+  <text x="100" y="125" class="sub">(Ignore body user_id)</text>
+
+  <rect x="215" y="60" width="175" height="95" class="ok"/>
+  <text x="302" y="88" class="lbl">2. Session Identity</text>
+  <text x="302" y="108" class="sub">Read current_user.id</text>
+  <text x="302" y="125" class="sub">from server session/JWT</text>
+
+  <rect x="425" y="60" width="175" height="95" class="ok"/>
+  <text x="512" y="88" class="lbl">3. Function / Role Policy</text>
+  <text x="512" y="108" class="sub">Central RBAC/ABAC</text>
+  <text x="512" y="125" class="sub">Fail closed (403)</text>
+
+  <rect x="635" y="60" width="165" height="95" class="ok"/>
+  <text x="717" y="88" class="lbl">4. Ownership Query</text>
+  <text x="717" y="108" class="sub">WHERE id = ?</text>
+  <text x="717" y="125" class="sub">AND owner_id = ?</text>
+
+  <line x1="180" y1="107" x2="212" y2="107" class="arr"/>
+  <line x1="390" y1="107" x2="422" y2="107" class="arr"/>
+  <line x1="600" y1="107" x2="632" y2="107" class="arr"/>
+
+  <text x="410" y="190" class="sub">Every HTTP method (GET, POST, PUT, PATCH, DELETE) must pass through steps 2–4 before returning data.</text>
+</svg>

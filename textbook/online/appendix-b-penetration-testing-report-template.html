@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appendix B: Penetration Testing Report Template | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link active" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="appendix-b-penetration-testing-finding-and-report-template">Appendix B: Penetration Testing Finding and Report Template</h1>
+<p>Use this template for weekly lab evidence notes, practical exams, and the capstone penetration testing report.</p>
+<hr>
+<h2 id="b-1-engagement-header-and-scope-statement">B.1 Engagement Header and Scope Statement</h2>
+<ul>
+<li><strong>Author / Student Name:</strong></li>
+<li><strong>Date:</strong></li>
+<li><strong>Target Application &amp; Container Tag:</strong> (e.g., <code>bkimminich/juice-shop:latest</code> at <code>http://localhost:3000</code>)</li>
+<li><strong>Written Scope:</strong> State explicitly what host/port is in scope, what methods are permitted, and what systems are excluded.</li>
+<li><strong>Tools Used:</strong> (e.g., Browser DevTools, OWASP ZAP, <code>curl</code>)</li>
+</ul>
+<h2 id="b-2-executive-summary-capstone-full-report">B.2 Executive Summary (Capstone / Full Report)</h2>
+<p>Write 1–2 concise paragraphs summarizing:</p>
+<ul>
+<li>What was assessed and under what authorization boundaries.</li>
+<li>Overall risk posture and systemic themes observed.</li>
+<li>Highest-priority remediation actions.</li>
+</ul>
+<h2 id="b-3-finding-template-repeat-for-each-validated-finding">B.3 Finding Template (Repeat for Each Validated Finding)</h2>
+<h3 id="finding-id-concise-title-naming-weakness-and-location">Finding [ID]: [Concise Title Naming Weakness and Location]</h3>
+<ul>
+<li><strong>Severity:</strong> Critical / High / Medium / Low / Informational</li>
+<li><strong>Affected Asset:</strong> <code>METHOD /path</code> (and parameter/header name)</li>
+<li><strong>Scope Confirmation:</strong> Confirmed inside written scope (<code>http://localhost:&lt;port&gt;</code>).</li>
+<li><strong>Description:</strong> Plain-language explanation of the failed security assumption and trust boundary.</li>
+<li><strong>Reproduction Steps:</strong></li>
+</ul>
+<ol>
+<li>Step 1 (exact preconditions, e.g., authenticated as User A).</li>
+<li>Step 2 (exact request or action).</li>
+<li>Step 3 (observed response proving the flaw).</li>
+</ol>
+<ul>
+<li><strong>Evidence:</strong> Minimal HTTP request/response snippet or targeted screenshot with unrelated tokens/PII redacted.</li>
+<li><strong>Impact:</strong> Concrete effect on confidentiality, integrity, or availability.</li>
+<li><strong>Remediation:</strong> Specific server-side or configuration fix, naming the exact control location.</li>
+<li><strong>Regression Test Recommendation:</strong> Automated test case to verify the fix and prevent recurrence.</li>
+</ul>
+<h2 id="b-4-remediation-roadmap-table">B.4 Remediation Roadmap Table</h2>
+<table><thead><tr><th>Priority Window</th><th>Finding ID(s)</th><th>Action</th><th>Owner / Layer</th></tr></thead><tbody><tr><td>Immediate (0–7 days)</td><td></td><td></td><td></td></tr><tr><td>Short-term (30 days)</td><td></td><td></td><td></td></tr><tr><td>Long-term (60–90 days)</td><td></td><td></td><td></td></tr></tbody></table>
+    <div class="pager"><a href="appendix-a-lab-environment.html">&larr; Appendix A: Local Docker Lab Environment</a><a href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

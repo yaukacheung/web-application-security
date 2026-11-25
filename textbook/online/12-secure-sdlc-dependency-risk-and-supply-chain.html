@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>12. Secure SDLC, Dependency Risk, and Supply Chain | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link active" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-12-secure-sdlc-dependency-risk-and-software-supply-chain">Chapter 12: Secure SDLC, Dependency Risk, and Software Supply Chain</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Integrate security practices into each phase of the Software Development Lifecycle using <a href="https://csrc.nist.gov/pubs/sp/800/218/final" target="_blank" rel="noopener noreferrer">NIST SP 800-218 (SSDF)</a>.</li>
+<li>Explain third-party dependency risk (<a href="https://top10.owasp.org/2021/A06_2021-Vulnerable_and_Outdated_Components/" target="_blank" rel="noopener noreferrer">OWASP A06:2021</a>) including transitive dependencies and lockfile integrity.</li>
+<li>Compare <strong>SAST</strong>, <strong>DAST</strong>, <strong>SCA</strong>, and <strong>secret scanning</strong>, and understand what each detects and misses.</li>
+<li>Harden CI/CD pipelines (such as GitHub Actions) against credential leaks and supply-chain tampering.</li>
+</ol>
+<hr>
+<h2 id="12-1-security-across-the-development-lifecycle">12.1 Security Across the Development Lifecycle</h2>
+<p>Fixing a vulnerability in production costs far more than preventing it during design or catching it in pull requests. The <a href="https://csrc.nist.gov/pubs/sp/800/218/final" target="_blank" rel="noopener noreferrer">NIST Secure Software Development Framework (SP 800-218)</a> organizes secure engineering into four groups:</p>
+<ol>
+<li><strong>Prepare the Organization (PO):</strong> Define security requirements, roles, and toolchain standards.</li>
+<li><strong>Protect the Software (PS):</strong> Secure source repositories, enforce branch protection, sign artifacts, and protect build environments.</li>
+<li><strong>Produce Well-Secured Software (PW):</strong> Threat model designs, review code, run automated testing, and configure secure defaults.</li>
+<li><strong>Respond to Vulnerabilities (RV):</strong> Monitor disclosures, patch affected releases, and conduct root-cause analysis so the same flaw does not recur.</li>
+</ol>
+<hr>
+<h2 id="12-2-dependency-risk-and-software-composition-analysis-sca">12.2 Dependency Risk and Software Composition Analysis (SCA)</h2>
+<p>Modern web applications rely heavily on open-source packages (npm, PyPI, Maven, RubyGems). A typical Node.js application may declare 20 direct dependencies that pull in hundreds of <strong>transitive dependencies</strong>. Under <a href="https://top10.owasp.org/2021/A06_2021-Vulnerable_and_Outdated_Components/" target="_blank" rel="noopener noreferrer">OWASP Top 10:2021 A06 (Vulnerable and Outdated Components)</a>, teams inherit every vulnerability in that dependency tree.</p>
+<h3 id="practical-dependency-controls">Practical Dependency Controls</h3>
+<ul>
+<li><strong>Commit lockfiles</strong> (<code>package-lock.json</code>, <code>poetry.lock</code>, <code>Gemfile.lock</code>) so builds install exact, hash-verified versions rather than floating ranges.</li>
+<li><strong>Run Software Composition Analysis (SCA)</strong> (<code>npm audit</code>, <code>pip-audit</code>, Dependabot, Trivy) in CI to flag known CVEs.</li>
+<li><strong>Assess reachability:</strong> Not every CVE in a transitive package is exploitable in your app. Prioritize vulnerabilities in reachable code paths and internet-facing parsers.</li>
+<li><strong>Maintain a Software Bill of Materials (SBOM)</strong> (e.g., CycloneDX or SPDX) so you know immediately which deployed services contain a newly disclosed library vulnerability.</li>
+<li><strong>Guard against supply-chain attacks:</strong> Watch for typosquatting, abandoned maintainer takeovers, and malicious <code>postinstall</code> scripts in package managers.</li>
+</ul>
+<h3 id="real-world-case-study-the-polyfill-io-javascript-cdn-attack-cve-2024-38526">Real-World Case Study: The Polyfill.io JavaScript CDN Attack (<code>CVE-2024-38526</code>)</h3>
+<p>In June 2024, security researchers uncovered a widespread client-side supply-chain attack after the <code>polyfill.io</code> domain and associated GitHub account were acquired by a new owner (<a href="https://sansec.io/research/polyfill-supply-chain-attack" target="_blank" rel="noopener noreferrer">Sansec Research</a>, <a href="https://nvd.nist.gov/vuln/detail/cve-2024-38526" target="_blank" rel="noopener noreferrer">NVD CVE-2024-38526</a>). More than 100,000 websites embedding <code>&lt;script src=&quot;https://cdn.polyfill.io/...&quot;&gt;</code> without Subresource Integrity (SRI) began serving modified JavaScript that selectively redirected mobile users to malicious sites. Even if your own backend repository is clean, every third-party script loaded without cryptographic integrity pinning inherits the current owner of that external domain.</p>
+<hr>
+<h2 id="12-3-sast-dast-and-secret-scanning-in-ci-cd">12.3 SAST, DAST, and Secret Scanning in CI/CD</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-14-secure-sdlc-gates.svg" alt="Figure 12.1: Secure SDLC Gates in a Hardened CI/CD Pipeline (NIST SSDF)" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 12.1: Secure SDLC Gates in a Hardened CI/CD Pipeline (NIST SSDF)</figcaption></figure>
+<p>Figure 12.1 maps automated security gates across the delivery pipeline, pairing early secret scanning and SAST on pull requests with lockfile-backed SCA/SBOM generation, dynamic staging checks, and SHA-pinned release workflows.</p>
+<table><thead><tr><th>Control</th><th>What It Inspects</th><th>Strengths</th><th>Limitations</th></tr></thead><tbody><tr><td><strong>SAST</strong> (Static Analysis)</td><td>Source code and AST/data flows</td><td>Catches injection sinks, unsafe crypto, hardcoded patterns early</td><td>High false-positive rate if untuned; misses runtime config and logic flaws</td></tr><tr><td><strong>DAST</strong> (Dynamic Analysis)</td><td>Running application over HTTP</td><td>Finds missing headers, exposed files, server-rendered XSS/SQLi</td><td>Misses unauthenticated/deep business logic, IDOR, and unvisited routes</td></tr><tr><td><strong>SCA</strong></td><td>Manifests and lockfiles</td><td>Identifies known vulnerable libraries quickly</td><td>Does not find custom-written application bugs</td></tr><tr><td><strong>Secret Scanning</strong></td><td>Commits, diffs, and build logs</td><td>Catches accidentally committed API keys and tokens before merge</td><td>Cannot undo exposure if a secret was already pushed to a public repo—exposed keys must be <strong>rotated immediately</strong></td></tr></tbody></table>
+<h3 id="hardening-ci-cd-workflows">Hardening CI/CD Workflows</h3>
+<p>In GitHub Actions and similar CI systems:</p>
+<ul>
+<li>Pin third-party Actions to full <strong>commit SHAs</strong> rather than mutable tags (<code>@v3</code>).</li>
+<li>Grant <code>GITHUB_TOKEN</code> the <strong>minimum required permissions</strong> (<code>permissions: contents: read</code>).</li>
+<li>Never print secrets in build logs, and never run untrusted pull-request code in a workflow context that has access to production deployment secrets.</li>
+</ul>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Commit lockfiles, maintain SBOMs, and run SCA to manage direct and transitive dependency risk.</li>
+<li>Pair SAST, DAST, and secret scanning in CI/CD, and rotate any credential ever pushed to Git history immediately.</li>
+<li>Pin third-party CI Actions to full commit SHAs and grant <code>GITHUB_TOKEN</code> least-privilege permissions.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Audit a CI workflow that references a third-party Action via <code>@main</code> and prints environment variables during debugging. List three concrete hardening changes.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does committing <code>package-lock.json</code> improve both build reproducibility and supply-chain integrity?</li>
+<li>Why must an API token that was accidentally committed and pushed to GitHub be rotated even after removing it in a later commit?</li>
+<li>Compare SAST and DAST: name one vulnerability class SAST finds more easily and one that requires dynamic or manual testing.</li>
+<li>Why is pinning a GitHub Action to a commit SHA safer than referencing a mutable version tag?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>NIST SP 800-218: <em>Secure Software Development Framework (SSDF) Version 1.1</em> — <a href="https://csrc.nist.gov/pubs/sp/800/218/final" target="_blank" rel="noopener noreferrer">https://csrc.nist.gov/pubs/sp/800/218/final</a></li>
+<li>OWASP Top 10:2021 — <em>A06:2021 Vulnerable and Outdated Components</em> — <a href="https://top10.owasp.org/2021/A06_2021-Vulnerable_and_Outdated_Components/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/A06_2021-Vulnerable_and_Outdated_Components/</a></li>
+<li>OWASP Cheat Sheet Series: <em>Vulnerable Dependency Management</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html</a></li>
+</ul>
+    <div class="pager"><a href="11-api-security-and-modern-application-patterns.html">&larr; 11. API Security and Modern Application Patterns</a><a href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

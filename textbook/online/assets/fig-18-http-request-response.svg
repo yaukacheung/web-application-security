@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 230" width="820" height="230" role="img" aria-label="HTTP Request and Response Anatomy">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 1.8; rx: 8; }
+    .hdr { fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.5; rx: 6; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #334155; }
+    .arr { stroke: #1d4ed8; stroke-width: 2; fill: none; marker-end: url(#a18); }
+  </style>
+  <defs><marker id="a18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#1d4ed8"/></marker></defs>
+  <rect width="820" height="230" fill="#ffffff"/>
+  <text x="410" y="24" class="lbl" style="font-size:15px;">Figure 1.2: HTTP Request–Response Structure and Layered State</text>
+
+  <rect x="25" y="48" width="320" height="150" class="box"/>
+  <text x="185" y="72" class="lbl">HTTP Request (Client -&gt; Server)</text>
+  <rect x="42" y="84" width="286" height="30" class="hdr"/>
+  <text x="52" y="103" class="sub">Start Line: Method + Path + Query (?id=42)</text>
+  <rect x="42" y="120" width="286" height="34" class="hdr"/>
+  <text x="52" y="141" class="sub">Headers: Host, Cookie, Authorization, Origin</text>
+  <rect x="42" y="160" width="286" height="26" class="hdr"/>
+  <text x="52" y="177" class="sub">Body: JSON / Form / Multipart Upload</text>
+
+  <rect x="475" y="48" width="320" height="150" class="box"/>
+  <text x="635" y="72" class="lbl">HTTP Response (Server -&gt; Client)</text>
+  <rect x="492" y="84" width="286" height="30" class="hdr"/>
+  <text x="502" y="103" class="sub">Status Line: 2xx / 3xx / 4xx / 5xx</text>
+  <rect x="492" y="120" width="286" height="34" class="hdr"/>
+  <text x="502" y="141" class="sub">Headers: Set-Cookie, CSP, Cache-Control</text>
+  <rect x="492" y="160" width="286" height="26" class="hdr"/>
+  <text x="502" y="177" class="sub">Body: HTML / JSON / Redirect Target</text>
+
+  <line x1="345" y1="98" x2="472" y2="98" class="arr"/>
+  <text x="410" y="90" class="sub" style="text-anchor:middle;font-weight:700;">Request</text>
+  <line x1="475" y1="150" x2="348" y2="150" class="arr"/>
+  <text x="410" y="142" class="sub" style="text-anchor:middle;font-weight:700;">Response</text>
+</svg>

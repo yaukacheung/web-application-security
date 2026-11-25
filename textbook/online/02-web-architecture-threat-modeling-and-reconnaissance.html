@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2. Web Architecture, Threat Modeling, and Reconnaissance | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link active" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-2-web-architecture-threat-modeling-and-reconnaissance">Chapter 2: Web Architecture, Threat Modeling, and Reconnaissance</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Decompose a modern web application into its architectural tiers, data flows, and trust boundaries.</li>
+<li>Conduct a lightweight threat model using the four core questions and STRIDE categories.</li>
+<li>Distinguish passive application mapping from noisy automated scanning.</li>
+<li>Build a structured attack surface inventory of endpoints, parameters, roles, and data stores.</li>
+</ol>
+<hr>
+<h2 id="2-1-modern-web-application-architectures">2.1 Modern Web Application Architectures</h2>
+<p>Before testing an application, you need an accurate mental model of how it is built. Two architectural patterns dominate modern web systems:</p>
+<h3 id="server-rendered-multi-tier-applications">Server-Rendered Multi-Tier Applications</h3>
+<p>Traditional applications (such as DVWA and Mutillidae II in our lab stack) render HTML on the server. The browser submits an HTML form or requests a URL; the server queries a database, populates a template, and returns complete HTML. State typically lives in server-side sessions backed by a cookie.</p>
+<h3 id="single-page-applications-spas-and-api-backends">Single-Page Applications (SPAs) and API Backends</h3>
+<p>Modern applications (such as OWASP Juice Shop) separate the frontend from the backend. The browser downloads a JavaScript bundle once, renders the user interface locally, and communicates with a REST or GraphQL API using <code>fetch()</code> or <code>XMLHttpRequest</code> over JSON.</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-17-web-architectures.svg" alt="Figure 2.1: Server-Rendered Multi-Tier vs. SPA + API Architectures" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 2.1: Server-Rendered Multi-Tier vs. SPA + API Architectures</figcaption></figure>
+<p>As shown in Figure 2.1, the two architectures distribute state and trust differently:</p>
+<ul>
+<li>In a <strong>server-rendered multi-tier application</strong> (Panel A), the browser submits forms and receives complete HTML pages; session state stays in a server-side store referenced by an opaque cookie, and routing/authorization logic lives on the server.</li>
+<li>In an <strong>SPA + API backend</strong> (Panel B), the browser downloads a static JavaScript bundle once and calls JSON endpoints using <code>fetch()</code> and Bearer tokens. This split improves UI responsiveness, but it exposes API route names, parameter schemas, and client-side role checks inside readable JavaScript bundles—making server-side authorization and CORS controls essential.</li>
+</ul>
+<hr>
+<h2 id="2-2-threat-modeling-thinking-before-testing">2.2 Threat Modeling: Thinking Before Testing</h2>
+<p>Threat modeling is the structured practice of identifying what can go wrong in a system before writing code or running tests. As outlined in the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Threat Modeling Cheat Sheet</a>, a practical threat model answers four questions:</p>
+<ol>
+<li><strong>What are we building?</strong> (Draw the architecture, data flows, and trust boundaries.)</li>
+<li><strong>What can go wrong?</strong> (Identify threats at each boundary.)</li>
+<li><strong>What are we going to do about it?</strong> (Select preventive, detective, or architectural controls.)</li>
+<li><strong>Did we do a good enough job?</strong> (Verify controls and update the model when features change.)</li>
+</ol>
+<h3 id="using-stride-at-trust-boundaries">Using STRIDE at Trust Boundaries</h3>
+<p>When reviewing a data flow diagram, security engineers commonly apply <strong>STRIDE</strong> to ask systematic questions about each component and boundary:</p>
+<table><thead><tr><th>Category</th><th>Security Property Violated</th><th>Web Application Example</th></tr></thead><tbody><tr><td><strong>S</strong>poofing</td><td>Authentication</td><td>Forging a session cookie or replaying a stolen JWT</td></tr><tr><td><strong>T</strong>ampering</td><td>Integrity</td><td>Modifying a hidden price field or injecting SQL syntax</td></tr><tr><td><strong>R</strong>epudiation</td><td>Non-repudiation</td><td>Performing an admin deletion with no audit log entry</td></tr><tr><td><strong>I</strong>nformation Disclosure</td><td>Confidentiality</td><td>Reading another user&#x27;s invoice via an IDOR endpoint</td></tr><tr><td><strong>D</strong>enial of Service</td><td>Availability</td><td>Triggering an expensive unpaginated export query</td></tr><tr><td><strong>E</strong>levation of Privilege</td><td>Authorization</td><td>Calling <code>/api/admin/users</code> with a standard user token</td></tr></tbody></table>
+<p>Threat modeling prevents aimless testing. Instead of throwing random payloads at every input field, you prioritize high-value assets (user credentials, payment flows, administrative functions) and the trust boundaries protecting them.</p>
+<h3 id="worked-example-threat-modeling-a-checkout-flow">Worked Example: Threat Modeling a Checkout Flow</h3>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-10-stride-data-flow.svg" alt="Figure 2.2: STRIDE Data-Flow Threat Model for a Checkout Request" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 2.2: STRIDE Data-Flow Threat Model for a Checkout Request</figcaption></figure>
+<p>As shown in Figure 2.2, tracing a single <code>POST /api/checkout</code> request across four components reveals distinct STRIDE threats at each boundary:</p>
+<p>Consider an e-commerce checkout endpoint (<code>POST /api/checkout</code> accepting <code>{&quot;cartId&quot;: 42, &quot;couponCode&quot;: &quot;SAVE10&quot;}</code>):</p>
+<ul>
+<li><strong>Spoofing:</strong> Can an unauthenticated caller or another user submit <code>cartId: 42</code>? Control: bind <code>cartId</code> to the server-side authenticated session.</li>
+<li><strong>Tampering:</strong> Can a client supply a negative item quantity or a modified unit price? Control: look up prices strictly from the server catalog and enforce positive integer quantities.</li>
+<li><strong>Information Disclosure:</strong> Does <code>GET /api/orders/42</code> expose another customer&#x27;s shipping address? Control: enforce record ownership in the database query.</li>
+<li><strong>Elevation of Privilege:</strong> Can a standard shopper invoke <code>POST /api/admin/refunds</code>? Control: enforce role-based middleware with deny-by-default routing.</li>
+</ul>
+<p>Tying each threat directly to a data-flow boundary turns abstract security concerns into concrete engineering requirements: every arrow crossing a boundary requires an explicit validation, authentication, or authorization check.</p>
+<hr>
+<h2 id="2-3-reconnaissance-and-application-mapping">2.3 Reconnaissance and Application Mapping</h2>
+<p>In web security, <strong>reconnaissance</strong> (or information gathering, mapped in <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/" target="_blank" rel="noopener noreferrer">OWASP WSTG v4.2 Section 4.1</a>) means systematically discovering how an application behaves before attempting any exploit.</p>
+<h3 id="passive-vs-active-mapping">Passive vs. Active Mapping</h3>
+<ul>
+<li><strong>Passive observation</strong> inspects normal responses without sending malformed or high-volume traffic: reading HTML source, inspecting <code>robots.txt</code> or <code>sitemap.xml</code>, reviewing client-side JavaScript bundles, checking response headers (<code>Server</code>, <code>X-Powered-By</code>, <code>Content-Security-Policy</code>), and walking through normal user workflows with an intercepting proxy recording traffic.</li>
+<li><strong>Active probing</strong> sends targeted requests to discover hidden routes, test parameter behavior, or verify how the server handles unexpected methods or content types.</li>
+</ul>
+<p>Noisy brute-force directory scanning at high request rates is rarely the right first step. Walking the application manually with browser developer tools or OWASP ZAP / Burp Suite gives you context: you see <em>why</em> an endpoint exists, what parameters it expects, and which roles call it.</p>
+<h3 id="building-an-attack-surface-inventory">Building an Attack Surface Inventory</h3>
+<p>An <strong>attack surface inventory</strong> documents every entry point where untrusted data enters the application or privileged actions occur. A clean inventory table records:</p>
+<table><thead><tr><th>Endpoint / Route</th><th>Method</th><th>Auth Required</th><th>Inputs / Parameters</th><th>Observed Behavior</th><th>Notes / Risk Hypothesis</th></tr></thead><tbody><tr><td><code>/rest/user/login</code></td><td><code>POST</code></td><td>No</td><td>JSON <code>email</code>, <code>password</code></td><td>Returns JWT token</td><td>Test rate limiting, error messages, SQLi</td></tr><tr><td><code>/api/BasketItems</code></td><td><code>POST</code></td><td>Yes</td><td><code>ProductId</code>, <code>quantity</code></td><td>Adds item to cart</td><td>Check negative quantity or basket ID tampering</td></tr><tr><td><code>/ftp/</code></td><td><code>GET</code></td><td>No</td><td>File path</td><td>Lists static files</td><td>Check path traversal or exposed backups</td></tr></tbody></table>
+<p>Notice how each row connects an <strong>endpoint</strong>, <strong>authentication state</strong>, <strong>user-controlled inputs</strong>, and a <strong>testable hypothesis</strong>. This inventory becomes your test plan for the rest of the assessment.</p>
+<hr>
+<h2 id="2-4-fingerprinting-without-overclaiming">2.4 Fingerprinting Without Overclaiming</h2>
+<p>Response headers, cookie names (<code>PHPSESSID</code>, <code>JSESSIONID</code>, <code>connect.sid</code>), error pages, and JavaScript frameworks often reveal the underlying technology stack. Knowing whether an application runs Node.js/Express, PHP, or Java/Spring helps you select relevant test cases—for example, checking prototype pollution or NoSQL patterns in Node.js versus Java deserialization in Spring.</p>
+<p>However, fingerprinting is only a clue. Headers can be spoofed or stripped by a reverse proxy, and a framework version alone does not prove a vulnerability is reachable. Always verify behavior rather than assuming a scanner&#x27;s banner match is an exploitable flaw.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Threat modeling connects architectural trust boundaries to concrete STRIDE failure modes before testing begins.</li>
+<li>Manual walkthroughs reveal business context, roles, and API routes that noisy automated scanners miss.</li>
+<li>An attack surface inventory turns reconnaissance observations into a structured, prioritized test plan.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Draw a data-flow diagram for a password-reset feature, mark every trust boundary, and list one Spoofing, Tampering, and Information Disclosure threat with a server-side mitigation.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does separating an application into a browser SPA and a JSON API expose more routing information to a tester?</li>
+<li>Map each letter of STRIDE to one concrete web application failure.</li>
+<li>What is the advantage of manual application walkthroughs over immediate automated directory brute-forcing?</li>
+<li>What columns belong in an attack surface inventory to make it actionable for security testing?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP Cheat Sheet Series: <em>Threat Modeling</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html</a></li>
+<li>OWASP Web Security Testing Guide v4.2: <em>4.1 Information Gathering</em> — <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/01-Information_Gathering/</a></li>
+<li>OWASP Application Security Verification Standard (ASVS) — <a href="https://owasp.org/projects/asvs" target="_blank" rel="noopener noreferrer">https://owasp.org/projects/asvs</a></li>
+</ul>
+    <div class="pager"><a href="01-ethics-authorization-and-http-foundations.html">&larr; 1. Ethics, Authorization, and HTTP Foundations</a><a href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

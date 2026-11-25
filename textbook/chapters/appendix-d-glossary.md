@@ -1,0 +1,22 @@
+# Appendix D: Glossary of Key Terms
+
+- **Ambient Credentials:** Authentication artifacts (such as browser cookies) attached automatically by the user agent to matching HTTP requests without explicit script action, enabling CSRF when unprotected.
+- **BOLA (Broken Object Level Authorization):** An API vulnerability (OWASP API1:2023) where an endpoint fails to verify that the authenticated caller owns or is permitted to access the requested object ID.
+- **BOPLA (Broken Object Property Level Authorization):** An API vulnerability (OWASP API3:2023) combining mass assignment (accepting unauthorized writable properties) and excessive data exposure (returning sensitive internal fields).
+- **Content Security Policy (CSP):** An HTTP response header (`Content-Security-Policy`) that restricts which origins, nonces, or hashes may execute scripts, load resources, or frame a document.
+- **CORS (Cross-Origin Resource Sharing):** An HTTP header mechanism allowing a server to selectively relax the Same-Origin Policy for approved external origins.
+- **CSRF (Cross-Site Request Forgery):** An attack (`CWE-352`) that tricks an authenticated user's browser into submitting an unintended state-changing request to a target origin.
+- **Deserialization Gadget:** A class or method already present on an application's classpath that can be chained during unsafe deserialization (`CWE-502`) to trigger unauthorized side effects or code execution.
+- **HSTS (HTTP Strict Transport Security):** An HTTP response header (`Strict-Transport-Security`, RFC 6797) instructing browsers to upgrade future connections to HTTPS before sending any cleartext request.
+- **IDOR (Insecure Direct Object Reference):** A broken access control flaw (`CWE-639`) where an application exposes an internal record identifier without enforcing server-side ownership checks.
+- **mXSS (Mutation XSS):** A cross-site scripting bypass in which malformed or nested markup mutates into executable script when re-parsed by a browser's HTML parser.
+- **Origin:** The tuple `(scheme, host, port)` used by browsers to enforce the Same-Origin Policy.
+- **Parameterized Query (Prepared Statement):** A database interface that compiles SQL structure separately from bound parameter values, preventing user input from altering query syntax.
+- **Parser Confusion:** The structural root cause of injection flaws, occurring when untrusted data is concatenated into a string interpreted by a downstream parser (SQL, HTML, shell, or CLI).
+- **Path Canonicalization:** Resolving relative segments (`../`), symlinks, and encodings into a single absolute filesystem path before verifying containment inside a base directory.
+- **Same-Origin Policy (SOP):** A browser security boundary that prevents scripts on one origin from reading responses or DOM state from another origin.
+- **Session Fixation:** An attack (`CWE-384`) where an attacker sets or supplies a known session identifier before login and reuses it once the victim authenticates; prevented by regenerating the session ID upon login.
+- **SSRF (Server-Side Request Forgery):** A vulnerability (`CWE-918`) where an attacker causes a server to issue outbound network requests to unintended internal or external destinations.
+- **Subresource Integrity (SRI):** An HTML attribute (`integrity="sha384-..."`) that instructs browsers to verify a third-party script or stylesheet's cryptographic hash before execution.
+- **Trust Boundary:** Any interface where data or control passes between components with different privilege levels or validation assumptions.
+- **Web Shell:** A script or route planted on a compromised web server to provide persistent remote command execution over HTTP.

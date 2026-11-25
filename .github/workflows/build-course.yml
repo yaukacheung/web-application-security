@@ -1,0 +1,61 @@
+name: Build course materials
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install slide tooling
+        run: npm install --global reveal-md
+
+      - name: Install Pandoc
+        uses: pandoc/actions/setup@v1
+
+      - name: Install PDF engine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-xetex texlive-latex-recommended texlive-fonts-recommended
+
+      - name: Build HTML slides
+        run: |
+          mkdir -p build/html
+          for deck in lectures/week*/slides.md; do
+            week="$(basename "$(dirname "$deck")")"
+            reveal-md "$deck" --static "build/html/$week"
+          done
+
+      - name: Build PPTX slides
+        run: |
+          mkdir -p build/pptx
+          for deck in lectures/week*/slides.md; do
+            week="$(basename "$(dirname "$deck")")"
+            pandoc "$deck" --from markdown --to pptx --output "build/pptx/$week.pptx"
+          done
+
+      - name: Build PDF handouts
+        run: |
+          mkdir -p build/pdf
+          find syllabus lectures labs quizzes exams project setup templates docs -name '*.md' -print | while read -r doc; do
+            name="$(echo "$doc" | tr '/' '-')"
+            pandoc "$doc" --from markdown --pdf-engine=xelatex --output "build/pdf/${name%.md}.pdf"
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: course-materials
+          path: build/

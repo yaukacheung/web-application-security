@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>15. Web Intrusion, Attack Chains, and Containment | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link active" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-15-web-intrusion-attack-chains-and-containment">Chapter 15: Web Intrusion, Attack Chains, and Containment</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Trace how attackers chain individual web vulnerabilities into full <strong>web intrusions</strong> (foothold, execution, discovery, persistence, and exfiltration).</li>
+<li>Recognize indicators of <strong>web shells</strong>, rogue administrative accounts, and credential harvesting in web server environments.</li>
+<li>Apply <a href="https://csrc.nist.gov/pubs/sp/800/61/r3/final" target="_blank" rel="noopener noreferrer">NIST SP 800-61 Rev. 3</a> incident response principles to contain and eradicate a web compromise without destroying forensic evidence.</li>
+<li>Interpret empirical breach metrics from the <a href="https://www.verizon.com/business/resources/T343/reports/2026-dbir-data-breach-investigations-report.pdf" target="_blank" rel="noopener noreferrer">Verizon 2026 Data Breach Investigations Report (DBIR)</a> to prioritize web defenses.</li>
+</ol>
+<hr>
+<h2 id="15-1-from-single-bug-to-web-intrusion">15.1 From Single Bug to Web Intrusion</h2>
+<p>A textbook often studies vulnerabilities one by one: SQL injection in Chapter 3, file upload in Chapter 9, SSRF in Chapter 10. Real intrusions rarely stop at a single finding. Attackers chain smaller weaknesses together to move from an unauthenticated HTTP request to persistent backend access.</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-06-web-intrusion-chain.svg" alt="Figure 15.1: Web Intrusion Attack Chain and Containment Checkpoints" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 15.1: Web Intrusion Attack Chain and Containment Checkpoints</figcaption></figure>
+<p>Empirical breach data shows why this matters. In the <a href="https://www.verizon.com/business/resources/T343/reports/2026-dbir-data-breach-investigations-report.pdf" target="_blank" rel="noopener noreferrer">Verizon 2026 DBIR</a>, Basic Web Application Attacks accounted for 2,281 confirmed breaches, with stolen credentials involved in 56% and exploited vulnerabilities in 53%. Across non-error, non-misuse breaches, vulnerability exploitation grew from 20% to 31% as an initial access vector, while only 26% of Known Exploited Vulnerabilities (KEV) were fully remediated across monitored organizations (median remediation time: 43 days).</p>
+<hr>
+<h2 id="15-2-anatomy-of-a-web-intrusion-chain">15.2 Anatomy of a Web Intrusion Chain</h2>
+<h3 id="stage-1-initial-foothold">Stage 1: Initial Foothold</h3>
+<p>An intrusion begins when an external request crosses a trust boundary:</p>
+<ul>
+<li><strong>Credential-based entry:</strong> Credential stuffing, password spraying, or leaked API tokens in public repositories.</li>
+<li><strong>Vulnerability exploitation:</strong> Unrestricted file upload into an executable webroot, unsafe deserialization, OS command injection, or SQL injection leading to database reads or file writes.</li>
+</ul>
+<h3 id="stage-2-execution-and-persistence">Stage 2: Execution and Persistence</h3>
+<p>Once code execution or administrative access is achieved, attackers establish reliable return paths:</p>
+<ul>
+<li><strong>Web shells:</strong> Lightweight scripts (PHP, JSP, ASPX, or modified Node.js routes) placed in writable web directories that accept commands over HTTP parameters or headers. In the 2023 MOVEit Transfer campaign (<code>CVE-2023-34362</code>), attackers chained SQL injection into deploying the <code>LEMURLOOT</code> ASP.NET web shell to extract files and database records (<a href="https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-158a" target="_blank" rel="noopener noreferrer">CISA AA23-158A</a>). Similarly, in the 2024 PAN-OS GlobalProtect campaign (<code>CVE-2024-3400</code>), attackers deployed the <code>UPSTYLE</code> Python backdoor for persistent command execution.</li>
+<li><strong>Rogue accounts and tokens:</strong> Creating hidden administrative users, adding unauthorized OAuth/API keys, or modifying password-reset hooks.</li>
+<li><strong>Scheduled tasks:</strong> Adding cron jobs or startup hooks in mutable container filesystems.</li>
+</ul>
+<h3 id="stage-3-discovery-and-credential-access">Stage 3: Discovery and Credential Access</h3>
+<p>From the application host, an intruder inspects environment variables (<code>process.env</code>), <code>.env</code> configuration files, database connection strings, and cloud metadata services to pivot from the web tier to the database or internal APIs.</p>
+<h3 id="stage-4-impact-and-exfiltration">Stage 4: Impact and Exfiltration</h3>
+<p>The final stage extracts database dumps, stages archives in temporary directories, or modifies application files (such as injecting payment-skimming JavaScript into checkout templates).</p>
+<hr>
+<h2 id="15-3-defensive-architecture-against-web-intrusions">15.3 Defensive Architecture Against Web Intrusions</h2>
+<p>Preventing initial bugs is essential, but resilient systems assume a boundary may eventually fail and design <strong>post-exploitation friction</strong>:</p>
+<ol>
+<li><strong>Read-Only Root Filesystems:</strong> Run web application containers with <code>read_only: true</code> and non-root users. If the web process cannot write to <code>/var/www/html</code> or application code directories, dropping a web shell fails.</li>
+<li><strong>Least-Privilege Database &amp; IAM Roles:</strong> The web application&#x27;s database user should have <code>SELECT/INSERT/UPDATE/DELETE</code> on application tables—never <code>FILE</code>, <code>SUPER</code>, or OS-execution privileges.</li>
+<li><strong>Egress Filtering:</strong> Web servers rarely need to initiate arbitrary outbound connections. Blocking unexpected outbound traffic breaks reverse shells and limits data exfiltration.</li>
+<li><strong>File Integrity Monitoring (FIM) and Route Auditing:</strong> Alert immediately on unexpected file modifications in application directories or newly registered administrative accounts.</li>
+</ol>
+<hr>
+<h2 id="15-4-containment-and-triage-nist-sp-800-61-rev-3">15.4 Containment and Triage (NIST SP 800-61 Rev. 3)</h2>
+<p>Following <a href="https://csrc.nist.gov/pubs/sp/800/61/r3/final" target="_blank" rel="noopener noreferrer">NIST SP 800-61 Rev. 3</a>, when a web intrusion is suspected:</p>
+<ol>
+<li><strong>Preserve evidence before wiping:</strong> Snapshot the container or disk, export centralized access/application logs, and capture volatile state before restarting services.</li>
+<li><strong>Contain cleanly:</strong> Isolate the compromised host or revoke network ingress while keeping forensic copies intact.</li>
+<li><strong>Rotate all exposed secrets:</strong> Assume every database password, JWT signing key, TLS private key, and API token readable from that host is compromised.</li>
+<li><strong>Eradicate the root cause:</strong> Deleting a web shell without patching the file-upload or deserialization bug invites immediate re-compromise.</li>
+</ol>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Real intrusions chain initial entry bugs or stolen credentials into web shells, persistence, credential discovery, and exfiltration.</li>
+<li>Read-only container filesystems, least-privilege database roles, and egress filtering add critical post-exploitation friction.</li>
+<li>During incident triage (NIST SP 800-61 Rev. 3), preserve forensic evidence before teardown and rotate all host-accessible secrets.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Given a suspected web shell upload on a containerized web app, write a four-step containment and recovery sequence that preserves evidence and prevents re-exploitation.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does running a web container with a read-only filesystem disrupt web-shell persistence even if an upload bug exists?</li>
+<li>According to the Verizon 2026 DBIR, what are the two dominant initial actions in Basic Web Application Attacks?</li>
+<li>Why must every secret in a compromised web server&#x27;s environment variables be rotated during incident recovery?</li>
+<li>What is the risk of immediately rebooting or destroying a compromised container before capturing logs and filesystem state?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>NIST SP 800-61 Rev. 3: <em>Incident Response Recommendations and Considerations for Cybersecurity Risk Management</em> — <a href="https://csrc.nist.gov/pubs/sp/800/61/r3/final" target="_blank" rel="noopener noreferrer">https://csrc.nist.gov/pubs/sp/800/61/r3/final</a></li>
+<li>Verizon <em>2026 Data Breach Investigations Report (DBIR)</em> — <a href="https://www.verizon.com/business/resources/T343/reports/2026-dbir-data-breach-investigations-report.pdf" target="_blank" rel="noopener noreferrer">https://www.verizon.com/business/resources/T343/reports/2026-dbir-data-breach-investigations-report.pdf</a></li>
+<li>OWASP Top 10:2021 — <em>A01 Broken Access Control &amp; A08 Software and Data Integrity Failures</em> — <a href="https://top10.owasp.org/2021/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/</a></li>
+</ul>
+    <div class="pager"><a href="14-penetration-testing-methodology-and-reporting.html">&larr; 14. Scoped Penetration Testing, Evidence, and Reporting</a><a href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

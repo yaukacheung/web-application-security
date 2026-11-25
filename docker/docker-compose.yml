@@ -1,0 +1,43 @@
+name: web-application-security-labs
+
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    container_name: was-juice-shop
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: unsafe
+    restart: unless-stopped
+
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    container_name: was-dvwa
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+  webgoat:
+    image: webgoat/webgoat:latest
+    container_name: was-webgoat
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
+
+  mutillidae:
+    image: webpwnized/mutillidae:latest
+    container_name: was-mutillidae
+    ports:
+      - "8083:80"
+    restart: unless-stopped
+
+  nodegoat:
+    image: owasp/nodegoat:latest
+    container_name: was-nodegoat
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+networks:
+  default:
+    name: was-lab-network

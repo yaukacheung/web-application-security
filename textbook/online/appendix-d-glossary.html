@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appendix D: Glossary of Key Terms | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link active" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="appendix-d-glossary-of-key-terms">Appendix D: Glossary of Key Terms</h1>
+<ul>
+<li><strong>Ambient Credentials:</strong> Authentication artifacts (such as browser cookies) attached automatically by the user agent to matching HTTP requests without explicit script action, enabling CSRF when unprotected.</li>
+<li><strong>BOLA (Broken Object Level Authorization):</strong> An API vulnerability (OWASP API1:2023) where an endpoint fails to verify that the authenticated caller owns or is permitted to access the requested object ID.</li>
+<li><strong>BOPLA (Broken Object Property Level Authorization):</strong> An API vulnerability (OWASP API3:2023) combining mass assignment (accepting unauthorized writable properties) and excessive data exposure (returning sensitive internal fields).</li>
+<li><strong>Content Security Policy (CSP):</strong> An HTTP response header (<code>Content-Security-Policy</code>) that restricts which origins, nonces, or hashes may execute scripts, load resources, or frame a document.</li>
+<li><strong>CORS (Cross-Origin Resource Sharing):</strong> An HTTP header mechanism allowing a server to selectively relax the Same-Origin Policy for approved external origins.</li>
+<li><strong>CSRF (Cross-Site Request Forgery):</strong> An attack (<code>CWE-352</code>) that tricks an authenticated user&#x27;s browser into submitting an unintended state-changing request to a target origin.</li>
+<li><strong>Deserialization Gadget:</strong> A class or method already present on an application&#x27;s classpath that can be chained during unsafe deserialization (<code>CWE-502</code>) to trigger unauthorized side effects or code execution.</li>
+<li><strong>HSTS (HTTP Strict Transport Security):</strong> An HTTP response header (<code>Strict-Transport-Security</code>, RFC 6797) instructing browsers to upgrade future connections to HTTPS before sending any cleartext request.</li>
+<li><strong>IDOR (Insecure Direct Object Reference):</strong> A broken access control flaw (<code>CWE-639</code>) where an application exposes an internal record identifier without enforcing server-side ownership checks.</li>
+<li><strong>mXSS (Mutation XSS):</strong> A cross-site scripting bypass in which malformed or nested markup mutates into executable script when re-parsed by a browser&#x27;s HTML parser.</li>
+<li><strong>Origin:</strong> The tuple <code>(scheme, host, port)</code> used by browsers to enforce the Same-Origin Policy.</li>
+<li><strong>Parameterized Query (Prepared Statement):</strong> A database interface that compiles SQL structure separately from bound parameter values, preventing user input from altering query syntax.</li>
+<li><strong>Parser Confusion:</strong> The structural root cause of injection flaws, occurring when untrusted data is concatenated into a string interpreted by a downstream parser (SQL, HTML, shell, or CLI).</li>
+<li><strong>Path Canonicalization:</strong> Resolving relative segments (<code>../</code>), symlinks, and encodings into a single absolute filesystem path before verifying containment inside a base directory.</li>
+<li><strong>Same-Origin Policy (SOP):</strong> A browser security boundary that prevents scripts on one origin from reading responses or DOM state from another origin.</li>
+<li><strong>Session Fixation:</strong> An attack (<code>CWE-384</code>) where an attacker sets or supplies a known session identifier before login and reuses it once the victim authenticates; prevented by regenerating the session ID upon login.</li>
+<li><strong>SSRF (Server-Side Request Forgery):</strong> A vulnerability (<code>CWE-918</code>) where an attacker causes a server to issue outbound network requests to unintended internal or external destinations.</li>
+<li><strong>Subresource Integrity (SRI):</strong> An HTML attribute (<code>integrity=&quot;sha384-...&quot;</code>) that instructs browsers to verify a third-party script or stylesheet&#x27;s cryptographic hash before execution.</li>
+<li><strong>Trust Boundary:</strong> Any interface where data or control passes between components with different privilege levels or validation assumptions.</li>
+<li><strong>Web Shell:</strong> A script or route planted on a compromised web server to provide persistent remote command execution over HTTP.</li>
+</ul>
+    <div class="pager"><a href="appendix-c-standards-and-references.html">&larr; Appendix C: Master Standards and References</a><a href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6. Session Management and Cookie Security | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link active" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-6-session-management-and-cookie-security">Chapter 6: Session Management and Cookie Security</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Trace the full session lifecycle from creation and renewal to idle/absolute expiration and logout invalidation.</li>
+<li>Configure HTTP cookie attributes (<code>Secure</code>, <code>HttpOnly</code>, <code>SameSite</code>, <code>Domain</code>, <code>Path</code>, and <code>__Host-</code> prefixes) according to <a href="https://www.rfc-editor.org/info/rfc6265/" target="_blank" rel="noopener noreferrer">IETF RFC 6265</a>.</li>
+<li>Explain <strong>session fixation</strong> (<a href="https://cwe.mitre.org/data/published/cwe_latest.pdf" target="_blank" rel="noopener noreferrer">MITRE CWE-384</a>) and how regenerating the session identifier on privilege change prevents it.</li>
+<li>Compare opaque server-side session tokens against stateless JSON Web Tokens (JWTs) and identify common JWT pitfalls.</li>
+</ol>
+<hr>
+<h2 id="6-1-the-session-lifecycle">6.1 The Session Lifecycle</h2>
+<p>Because HTTP is stateless, an authenticated session bridges individual requests to a user identity. A secure session lifecycle has four phases:</p>
+<ol>
+<li><strong>Creation:</strong> Generate a session identifier using a cryptographically secure pseudorandom number generator (CSPRNG) with at least <strong>128 bits of entropy</strong> (avoid sequential IDs, timestamps, or predictable hashes of usernames).</li>
+<li><strong>Binding and Transport:</strong> Deliver the identifier strictly in an HTTPS <code>Set-Cookie</code> header (or an <code>Authorization: Bearer</code> header for APIs), never in a URL query string where it leaks into browser history, server logs, and <code>Referer</code> headers.</li>
+<li><strong>Renewal on Privilege Change:</strong> Whenever a user logs in, elevates privileges, or resets a password, <strong>invalidate the old session ID and issue a fresh one</strong>.</li>
+<li><strong>Termination:</strong> Enforce both an <strong>idle timeout</strong> (e.g., 15–30 minutes of inactivity) and an <strong>absolute timeout</strong> (maximum lifetime regardless of activity). On explicit logout, delete the session record server-side and instruct the browser to clear the cookie.</li>
+</ol>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-08-session-lifecycle.svg" alt="Figure 6.1: Secure Session Lifecycle and Fixation Prevention" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 6.1: Secure Session Lifecycle and Fixation Prevention</figcaption></figure>
+<hr>
+<h2 id="6-2-cookie-security-attributes">6.2 Cookie Security Attributes</h2>
+<p>Under <a href="https://www.rfc-editor.org/info/rfc6265/" target="_blank" rel="noopener noreferrer">IETF RFC 6265</a> and the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Session Management Cheat Sheet</a>, every session cookie should explicitly set defensive attributes:</p>
+<pre><code class="language-http">Set-Cookie: __Host-sid=7d9c2a...; Path=/; Secure; HttpOnly; SameSite=Lax</code></pre>
+<table><thead><tr><th>Attribute</th><th>Security Effect</th><th>Common Mistake</th></tr></thead><tbody><tr><td><code>Secure</code></td><td>Browser sends cookie only over HTTPS</td><td>Omitting <code>Secure</code> allows plaintext interception on HTTP links</td></tr><tr><td><code>HttpOnly</code></td><td>Blocks <code>document.cookie</code> JavaScript access</td><td>Leaving it off exposes session tokens to XSS exfiltration</td></tr><tr><td><code>SameSite=Lax</code> or <code>Strict</code></td><td>Restricts cross-site automatic cookie attachment (mitigates CSRF)</td><td>Using <code>SameSite=None</code> without necessity</td></tr><tr><td><code>Domain</code></td><td>Controls subdomain scope; <strong>omit</strong> <code>Domain</code> to lock to exact host</td><td>Setting <code>Domain=.example.com</code> exposes the session to vulnerable subdomains</td></tr><tr><td><code>Path=/</code></td><td>Restricts URL path scope</td><td>Relying on <code>Path</code> as a security boundary (same-origin scripts can still read other paths)</td></tr><tr><td><code>__Host-</code> prefix</td><td>Browser enforces <code>Secure</code>, <code>Path=/</code>, and no <code>Domain</code> attribute</td><td>Allows subdomain cookie-tossing if omitted</td></tr></tbody></table>
+<hr>
+<h2 id="6-3-session-fixation-and-hijacking">6.3 Session Fixation and Hijacking</h2>
+<h3 id="session-fixation">Session Fixation</h3>
+<p>In a <strong>session fixation</strong> attack, the attacker obtains a valid pre-login session ID from the application (or sets one via a subdomain cookie or URL parameter), tricks the victim into authenticating with that fixed ID, and then reuses the same ID once it becomes authenticated.</p>
+<p><strong>Fix:</strong> Always regenerate the session identifier at the moment of authentication (<code>req.session.regenerate()</code> in Express, <code>session_regenerate_id(true)</code> in PHP) and discard the pre-login identifier.</p>
+<h3 id="session-hijacking-vs-replay">Session Hijacking vs. Replay</h3>
+<p>Session hijacking occurs when an attacker steals an active token via network sniffing (missing TLS/<code>Secure</code>), XSS (<code>HttpOnly</code> missing), or exposed logs/URLs. Short lifetimes, TLS everywhere, and binding high-risk actions to fresh re-authentication reduce the blast radius.</p>
+<hr>
+<h2 id="6-4-opaque-server-side-sessions-vs-jwts">6.4 Opaque Server-Side Sessions vs. JWTs</h2>
+<p>Many modern SPAs use JSON Web Tokens (JWTs) instead of server-side session stores. Both models have clear trade-offs:</p>
+<ul>
+<li><strong>Opaque Server-Side Sessions:</strong> The cookie holds only a random key; user state stays on the server (Redis/database). <strong>Revocation is immediate</strong>: deleting the server record ends the session on the next request.</li>
+<li><strong>Stateless JWTs:</strong> The token carries signed claims (<code>sub</code>, <code>role</code>, <code>exp</code>). Because the server verifies the signature without a database lookup, <strong>revoking a compromised JWT before <code>exp</code> expires requires a server-side denylist or short-lived access tokens paired with revocable refresh tokens</strong>.</li>
+</ul>
+<p>Common JWT security mistakes include:</p>
+<ul>
+<li>Accepting <code>&quot;alg&quot;: &quot;none&quot;</code> or failing to pin the expected verification algorithm, allowing <strong>key-confusion attacks</strong> where an attacker signs a forged token with <code>HS256</code> using the server&#x27;s public <code>RS256</code> key as the HMAC secret.</li>
+<li>Failing to validate <code>exp</code>, <code>iss</code>, and <code>aud</code> claims, or omitting a <code>jti</code> (JWT ID) when revocation is required.</li>
+<li>Storing JWTs in <code>localStorage</code> where any XSS payload can read them directly, instead of an <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code> cookie.</li>
+</ul>
+<h3 id="cookie-tossing-and-subdomain-isolation">Cookie Tossing and Subdomain Isolation</h3>
+<p>Because browsers allow a compromised or untrusted subdomain (<code>blog.example.com</code>) to set cookies scoped to a parent domain (<code>Domain=.example.com</code>), an attacker controlling a subdomain can overwrite a victim&#x27;s session cookie on <code>app.example.com</code> (<strong>cookie tossing</strong>). Always omit <code>Domain</code> on sensitive session cookies and use the <code>__Host-</code> prefix so browsers reject any cookie set with a <code>Domain</code> attribute.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Generate session identifiers with at least 128 bits of CSPRNG entropy and regenerate them on every login or privilege change.</li>
+<li>Harden cookies with <code>__Host-</code> prefixes, <code>Secure</code>, <code>HttpOnly</code>, and <code>SameSite=Lax</code> (omitting <code>Domain</code>).</li>
+<li>Stateless JWTs require short lifetimes, strict <code>alg</code>/<code>iss</code>/<code>aud</code>/<code>exp</code> validation, and a revocation strategy.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Write an HTTP <code>Set-Cookie</code> header for a high-sensitivity web application session and justify why each attribute (<code>__Host-</code>, <code>Secure</code>, <code>HttpOnly</code>, <code>SameSite</code>, <code>Path</code>) is configured as written.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>What is session fixation, and at what exact step in the authentication flow must the server prevent it?</li>
+<li>Why is omitting the <code>Domain</code> attribute on a session cookie safer than setting <code>Domain=.example.com</code>?</li>
+<li>Why is immediate logout revocation harder with stateless JWTs than with opaque server-side sessions?</li>
+<li>What three security guarantees does the <code>__Host-</code> cookie prefix enforce?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>IETF RFC 6265: <em>HTTP State Management Mechanism</em> — <a href="https://www.rfc-editor.org/info/rfc6265/" target="_blank" rel="noopener noreferrer">https://www.rfc-editor.org/info/rfc6265/</a></li>
+<li>OWASP Cheat Sheet Series: <em>Session Management</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html</a></li>
+<li>OWASP Cheat Sheet Series: <em>JSON Web Token for Java</em> / <em>JWT Security</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html</a></li>
+<li>OWASP WSTG v4.2: <em>Testing for Session Management</em> — <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/06-Session_Management_Testing/" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/06-Session_Management_Testing/</a></li>
+</ul>
+    <div class="pager"><a href="05-authentication-design-and-password-security.html">&larr; 5. Authentication Design and Password Security</a><a href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

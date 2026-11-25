@@ -1,0 +1,15 @@
+{
+  "name": "web-application-security-course",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Markdown-first Web Application Security course materials with Reveal.js slides.",
+  "scripts": {
+    "slides:week01": "reveal-md lectures/week01/slides.md",
+    "slides:html": "mkdir -p build/html && for deck in lectures/week*/slides.md; do week=$(basename $(dirname \"$deck\")); reveal-md \"$deck\" --static \"build/html/$week\"; done",
+    "slides:pptx": "mkdir -p build/pptx && for deck in lectures/week*/slides.md; do week=$(basename $(dirname \"$deck\")); pandoc \"$deck\" --from markdown --to pptx --output \"build/pptx/$week.pptx\"; done",
+    "materials:generate": "ruby tools/generate_course_materials.rb && ruby tools/refine_assessments.rb && ruby tools/create_editions_and_refinements.rb"
+  },
+  "devDependencies": {
+    "reveal-md": "^6.1.3"
+  }
+}

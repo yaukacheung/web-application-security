@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220" width="820" height="220" role="img" aria-label="Defense-in-Depth File Upload Pipeline">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 1.8; rx: 8; }
+    .sec { fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.8; rx: 8; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10.5px; fill: #334155; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#a12); }
+  </style>
+  <defs><marker id="a12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="820" height="220" fill="#ffffff"/>
+  <text x="410" y="24" class="lbl" style="font-size:15px;">Figure 9.1: Defense-in-Depth File Upload and Path Confinement Pipeline</text>
+
+  <rect x="18" y="62" width="135" height="95" class="box"/>
+  <text x="85" y="88" class="lbl">1. Upload Entry</text>
+  <text x="85" y="108" class="sub">Size cap &amp; rate limit</text>
+  <text x="85" y="125" class="sub">Extension allow-list</text>
+  <text x="85" y="142" class="sub">(.png, .jpg, .pdf)</text>
+
+  <rect x="178" y="62" width="145" height="95" class="sec"/>
+  <text x="250" y="88" class="lbl">2. Content Check</text>
+  <text x="250" y="108" class="sub">Verify magic bytes</text>
+  <text x="250" y="125" class="sub">Re-encode images</text>
+  <text x="250" y="142" class="sub">(Neutralize polyglots)</text>
+
+  <rect x="348" y="62" width="145" height="95" class="sec"/>
+  <text x="420" y="88" class="lbl">3. Path Isolation</text>
+  <text x="420" y="108" class="sub">Server UUID filename</text>
+  <text x="420" y="125" class="sub">realpath + commonpath</text>
+  <text x="420" y="142" class="sub">(Stops ../ traversal)</text>
+
+  <rect x="518" y="62" width="135" height="95" class="sec"/>
+  <text x="585" y="88" class="lbl">4. Safe Storage</text>
+  <text x="585" y="108" class="sub">Outside webroot or</text>
+  <text x="585" y="125" class="sub">isolated object store</text>
+  <text x="585" y="142" class="sub">(No PHP/JSP exec)</text>
+
+  <rect x="678" y="62" width="125" height="95" class="box"/>
+  <text x="740" y="88" class="lbl">5. Safe Serving</text>
+  <text x="740" y="108" class="sub">Separate domain</text>
+  <text x="740" y="125" class="sub">nosniff + attachment</text>
+  <text x="740" y="142" class="sub">(Stops Stored XSS)</text>
+
+  <line x1="153" y1="110" x2="175" y2="110" class="arr"/>
+  <line x1="323" y1="110" x2="345" y2="110" class="arr"/>
+  <line x1="493" y1="110" x2="515" y2="110" class="arr"/>
+  <line x1="653" y1="110" x2="675" y2="110" class="arr"/>
+
+  <text x="410" y="192" class="sub">Never trust user-supplied filenames, Content-Type headers, or client-side accept attributes.</text>
+</svg>

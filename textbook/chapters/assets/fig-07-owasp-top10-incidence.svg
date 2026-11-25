@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 260" width="800" height="260" role="img" aria-label="OWASP Top 10:2021 Empirical Incidence Rates and CWE Volume">
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; font-weight: 700; fill: #0f172a; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 600; fill: #1e293b; }
+    .val { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; fill: #0f172a; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #475569; }
+    .src { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #64748b; }
+    .axis { stroke: #cbd5e1; stroke-width: 1; }
+  </style>
+  <rect width="800" height="260" fill="#ffffff"/>
+  <text x="24" y="28" class="title">Figure 7.1: OWASP Top 10:2021 Average Incidence Rate &amp; CWE Occurrences</text>
+
+  <line x1="255" y1="50" x2="255" y2="200" class="axis"/>
+  <line x1="255" y1="200" x2="760" y2="200" class="axis"/>
+
+  <!-- A05: 4.50% -> scale 70px per 1% = 315px -->
+  <text x="24" y="80" class="lbl">A05 Security Misconfiguration</text>
+  <rect x="255" y="60" width="315" height="28" rx="4" fill="#2563eb"/>
+  <text x="580" y="79" class="val">4.50% avg (208k+ CWEs; 90% tested)</text>
+
+  <!-- A01: 3.81% -> scale 70px = 267px -->
+  <text x="24" y="128" class="lbl">A01 Broken Access Control</text>
+  <rect x="255" y="108" width="267" height="28" rx="4" fill="#dc2626"/>
+  <text x="532" y="127" class="val">3.81% avg (318k+ CWEs; #1 risk)</text>
+
+  <!-- A03: 3.37% -> scale 70px = 236px -->
+  <text x="24" y="176" class="lbl">A03 Injection</text>
+  <rect x="255" y="156" width="236" height="28" rx="4" fill="#ea580c"/>
+  <text x="501" y="175" class="val">3.37% avg (19% max; 33 CWEs; 94% tested)</text>
+
+  <text x="24" y="232" class="src">Source: OWASP Top 10:2021 Introduction &amp; Data Factors (top10.owasp.org/2021/A00_2021_Introduction/).</text>
+</svg>

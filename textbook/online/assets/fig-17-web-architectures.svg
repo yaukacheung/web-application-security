@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" width="820" height="300" role="img" aria-label="Server-Rendered Multi-Tier vs. SPA API Architecture">
+  <style>
+    .panel { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 8; }
+    .box { fill: #ffffff; stroke: #1e293b; stroke-width: 1.8; rx: 6; }
+    .accent { fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.8; rx: 6; }
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .ptitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 700; fill: #1e293b; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10.5px; fill: #475569; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#a17); }
+  </style>
+  <defs><marker id="a17" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="820" height="300" fill="#ffffff"/>
+  <text x="410" y="24" class="title">Figure 2.1: Server-Rendered Multi-Tier vs. SPA + API Architectures</text>
+
+  <!-- Panel 1: Server-Rendered -->
+  <rect x="20" y="42" width="780" height="112" class="panel"/>
+  <text x="36" y="64" class="ptitle">A. Server-Rendered Multi-Tier Application (e.g., Traditional MVC / PHP / Django)</text>
+
+  <rect x="36" y="78" width="145" height="60" class="box"/>
+  <text x="108" y="104" class="lbl">Browser</text>
+  <text x="108" y="121" class="sub">Form POST + Cookie</text>
+
+  <rect x="225" y="78" width="175" height="60" class="accent"/>
+  <text x="312" y="104" class="lbl">Web &amp; App Server</text>
+  <text x="312" y="121" class="sub">Controller + HTML Template</text>
+
+  <rect x="445" y="78" width="150" height="60" class="box"/>
+  <text x="520" y="104" class="lbl">Session Store</text>
+  <text x="520" y="121" class="sub">Server-side SID lookup</text>
+
+  <rect x="635" y="78" width="145" height="60" class="box"/>
+  <text x="707" y="104" class="lbl">Database</text>
+  <text x="707" y="121" class="sub">SQL / Relational Data</text>
+
+  <line x1="181" y1="108" x2="222" y2="108" class="arr"/>
+  <line x1="400" y1="108" x2="442" y2="108" class="arr"/>
+  <line x1="595" y1="108" x2="632" y2="108" class="arr"/>
+
+  <!-- Panel 2: SPA + API -->
+  <rect x="20" y="168" width="780" height="116" class="panel"/>
+  <text x="36" y="190" class="ptitle">B. Single-Page Application (SPA) + Decoupled API Backend</text>
+
+  <rect x="36" y="206" width="160" height="62" class="box"/>
+  <text x="116" y="230" class="lbl">Browser SPA</text>
+  <text x="116" y="246" class="sub">Client Router + fetch()</text>
+  <text x="116" y="260" class="sub">Visible API routes in JS</text>
+
+  <rect x="240" y="206" width="150" height="62" class="box"/>
+  <text x="315" y="232" class="lbl">CDN / Static Host</text>
+  <text x="315" y="249" class="sub">Serves main.js bundle</text>
+
+  <rect x="435" y="206" width="165" height="62" class="accent"/>
+  <text x="517" y="230" class="lbl">REST / GraphQL API</text>
+  <text x="517" y="246" class="sub">JSON + Bearer JWT</text>
+  <text x="517" y="260" class="sub">CORS &amp; AuthZ Middleware</text>
+
+  <rect x="640" y="206" width="140" height="62" class="box"/>
+  <text x="710" y="232" class="lbl">Database / Services</text>
+  <text x="710" y="249" class="sub">Data + Identity Provider</text>
+
+  <line x1="196" y1="237" x2="237" y2="237" class="arr"/>
+  <line x1="390" y1="237" x2="432" y2="237" class="arr"/>
+  <line x1="600" y1="237" x2="637" y2="237" class="arr"/>
+</svg>

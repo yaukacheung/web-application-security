@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preface &amp; Safety Model | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link active" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="preface">Preface</h1>
+<p><strong>Author:</strong> Yau Ka Cheung, M.S.</p>
+<p><strong>Contact:</strong> <a href="mailto:Yauka.Cheung@etamu.edu" target="_blank" rel="noopener noreferrer">Yauka.Cheung@etamu.edu</a></p>
+<p><strong>Copyright:</strong> © 2026 Yau Ka Cheung, M.S. All rights reserved.</p>
+<hr>
+<p>Modern web applications are distributed systems built across browsers, reverse proxies, application servers, databases, and third-party APIs. Every request crosses multiple execution contexts and trust boundaries—and most serious vulnerabilities appear where developers assume data, identity, or network origin can be trusted without verification.</p>
+<p>This book bridges <strong>web programming</strong> and <strong>security engineering</strong>. Rather than treating security as a checklist of isolated attack payloads, it teaches how web systems fail from the inside out: how parser confusion causes injection, how ambient browser credentials enable cross-site attacks, how missing server-side ownership checks expose records, and how defenders detect, contain, and remediate real intrusions.</p>
+<p>Throughout every chapter, analysis returns to four practical questions:</p>
+<ol>
+<li><strong>What can the user control?</strong> (Paths, query strings, headers, cookies, JSON bodies, file metadata, and client-side state.)</li>
+<li><strong>What does the server trust?</strong> (Assumptions about identity, origin, file types, backend services, and serialized objects.)</li>
+<li><strong>Where are the trust boundaries?</strong> (Browser-to-server, application-to-database, service-to-service, and user-to-admin.)</li>
+<li><strong>What control reduces the risk without breaking the engineering workflow?</strong> (Parameterized interfaces, context-aware encoding, server-side authorization, and verifiable regression tests.)</li>
+</ol>
+<h2 id="structure-of-the-book">Structure of the Book</h2>
+<p>The 16 chapters move from protocol foundations to full-stack defense and scoped security assessment:</p>
+<ul>
+<li><strong>Part I (Chapters 1–4):</strong> Ethics, authorization, HTTP mechanics, threat modeling, reconnaissance, SQL injection, and cross-site scripting (XSS).</li>
+<li><strong>Part II (Chapters 5–7):</strong> Authentication design, password storage, session management, cookie attributes, and object-level access control (IDOR).</li>
+<li><strong>Part III (Chapters 8–11):</strong> Cross-site request forgery (CSRF), clickjacking, file uploads, path traversal, server-side request forgery (SSRF), unsafe deserialization, and REST/GraphQL API security.</li>
+<li><strong>Part IV (Chapters 12–16):</strong> Secure SDLC, dependency and supply-chain risk, logging, monitoring, WAFs, scoped penetration testing and reporting, web intrusion attack chains and containment, and transport cryptography (TLS/HTTPS).</li>
+</ul>
+<p>Appendices A–C provide a containerized lab setup reference, a reusable penetration testing report template, and a master index of cited standards and security advisories.</p>
+<h2 id="ethics-and-safe-testing-scope">Ethics and Safe Testing Scope</h2>
+<p>Offensive security techniques are dual-use. Every testing technique in this book must stay inside explicit authorization boundaries:</p>
+<ul>
+<li><strong>Authorized targets only:</strong> Test only systems you own, isolated local lab environments, or targets covered by written authorization.</li>
+<li><strong>No unauthorized scanning:</strong> Do not probe public websites, institutional networks, or third-party cloud infrastructure without explicit permission.</li>
+<li><strong>Credential hygiene:</strong> Never reuse real personal or organizational passwords, API keys, or tokens inside test environments.</li>
+<li><strong>Minimal evidence:</strong> Capture only the request, response, or screenshot needed to prove a technical claim, and redact sensitive tokens or unrelated data.</li>
+</ul>
+    <div class="pager"><span></span><a href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

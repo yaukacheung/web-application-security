@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9. File Upload, Path Traversal, and Server-Side File Handling | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link active" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-9-file-upload-path-traversal-and-server-side-file-handling">Chapter 9: File Upload, Path Traversal, and Server-Side File Handling</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Explain <strong>path traversal</strong> (<a href="https://top10.owasp.org/2021/A01_2021-Broken_Access_Control/" target="_blank" rel="noopener noreferrer">MITRE CWE-22</a>) and why naive string replacements like stripping <code>../</code> fail.</li>
+<li>Enforce server-side <strong>path canonicalization</strong> and base-directory confinement.</li>
+<li>Analyze <strong>unrestricted file upload</strong> risks (stored XSS via SVG/HTML, web shell execution, polyglots, and Denial of Service).</li>
+<li>Design a defense-in-depth file upload pipeline using allow-lists, content inspection, random filenames, and isolated storage.</li>
+</ol>
+<hr>
+<h2 id="9-1-path-traversal-directory-traversal">9.1 Path Traversal (Directory Traversal)</h2>
+<p>Path traversal occurs when an application uses untrusted input to construct a filesystem path without confining the resolved path inside an intended base directory.</p>
+<p>Consider a download endpoint:</p>
+<pre><code class="language-python"># VULNERABLE: Direct path join without canonicalization check
+file_path = os.path.join(&quot;/var/app/uploads&quot;, request.args.get(&quot;file&quot;))
+return send_file(file_path)</code></pre>
+<p>An attacker requests <code>?file=../../../../etc/passwd</code> (or URL-encoded <code>%2e%2e%2f</code>). Stripping <code>../</code> once is not enough—a naive filter turns <code>....//</code> into <code>../</code> after one pass.</p>
+<h3 id="proper-fix-canonicalize-and-verify-prefix">Proper Fix: Canonicalize and Verify Prefix</h3>
+<p>Resolve the <strong>canonical absolute path</strong> (<code>os.path.realpath()</code> in Python, <code>path.resolve()</code> in Node.js) and verify that it stays inside the canonical base directory (checking with a trailing path separator or <code>os.path.commonpath</code>):</p>
+<pre><code class="language-python"># SECURE: Canonicalize both paths and verify containment
+base_dir = os.path.realpath(&quot;/var/app/uploads&quot;)
+target_path = os.path.realpath(os.path.join(base_dir, user_filename))
+if os.path.commonpath([base_dir, target_path]) != base_dir or target_path == base_dir:
+    abort(403)</code></pre>
+<p>Even better: <strong>avoid passing user-supplied filenames to the filesystem at all</strong>. Map an opaque database ID (<code>file_id=104</code>) to the stored file path on the server.</p>
+<h3 id="real-world-case-study-pan-os-globalprotect-path-traversal-cve-2024-3400">Real-World Case Study: PAN-OS GlobalProtect Path Traversal (<code>CVE-2024-3400</code>)</h3>
+<p>In April 2024, a critical zero-day vulnerability (<code>CVE-2024-3400</code>, CVSS 10.0) in Palo Alto Networks PAN-OS GlobalProtect demonstrated how path traversal in an unexpected HTTP header or cookie can escalate to full system compromise (<a href="https://www.picussecurity.com/resource/blog/cve-2024-3400-palo-alto-pan-os-command-injection-vulnerability-explained" target="_blank" rel="noopener noreferrer">Picus Analysis</a>, <a href="https://www.cybersecuritydive.com/news/palo-alto-networks-firewall-exploits-grow/713605/" target="_blank" rel="noopener noreferrer">Rapid7 / Cybersecurity Dive</a>). When parsing the <code>SESSID</code> cookie, the service failed to validate that the value was a UUID, allowing unauthenticated <code>POST</code> requests with <code>../</code> sequences to create arbitrary files in telemetry directories whose filenames were subsequently passed to shell commands (<code>UPSTYLE</code> backdoor deployment). Path traversal is not limited to <code>?file=</code> download parameters—every cookie, header, and archive entry extracted by server code must be validated and canonicalized.</p>
+<hr>
+<h2 id="9-2-file-upload-risks">9.2 File Upload Risks</h2>
+<p>File uploads cross multiple trust boundaries at once: filename parsing, content parsing, disk storage, and later serving back to browsers.</p>
+<table><thead><tr><th>Failure Mode</th><th>Mechanism</th><th>Impact</th></tr></thead><tbody><tr><td><strong>Executable upload</strong></td><td>Uploading <code>.php</code>, <code>.jsp</code>, or <code>.aspx</code> into a web-accessible directory</td><td>Remote Code Execution (RCE) on the server</td></tr><tr><td><strong>Active browser content</strong></td><td>Uploading <code>.html</code> or <code>.svg</code> (which can contain <code>&lt;script&gt;</code>) served inline on the main origin</td><td>Stored XSS against any user who opens the file</td></tr><tr><td><strong>Filename injection</strong></td><td>Filenames containing <code>../</code>, null bytes, or OS shell metacharacters</td><td>Overwriting configuration files (<code>.htaccess</code>, <code>web.config</code>) or command execution</td></tr><tr><td><strong>Resource exhaustion</strong></td><td>Unbounded file sizes or decompression bombs (zip bombs)</td><td>Disk or memory Denial of Service</td></tr></tbody></table>
+<h3 id="why-client-side-and-content-type-checks-fail">Why Client-Side and <code>Content-Type</code> Checks Fail</h3>
+<ul>
+<li><strong>Client-side <code>&lt;input accept=&quot;.png&quot;&gt;</code>:</strong> Easily bypassed by intercepting the <code>POST</code> request.</li>
+<li><strong><code>Content-Type</code> header (<code>image/jpeg</code>):</strong> Controlled entirely by the sender in the multipart request.</li>
+<li><strong>Magic-byte inspection alone:</strong> Useful, but <strong>polyglot files</strong> can begin with valid GIF/JPEG magic bytes (<code>GIF89a</code>) while still containing valid PHP or HTML/JS payloads later in the file.</li>
+</ul>
+<hr>
+<h2 id="9-3-defense-in-depth-upload-pipeline">9.3 Defense-in-Depth Upload Pipeline</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-12-file-upload-pipeline.svg" alt="Figure 9.1: Defense-in-Depth File Upload and Path Confinement Pipeline" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 9.1: Defense-in-Depth File Upload and Path Confinement Pipeline</figcaption></figure>
+<p>As illustrated in Figure 9.1, a resilient upload pipeline validates size and extension at entry, inspects magic bytes and re-encodes images to strip polyglot payloads, isolates the resolved path with server-generated UUID filenames, stores files outside the executable webroot, and serves downloads from a separate domain with <code>nosniff</code> and <code>Content-Disposition: attachment</code>.</p>
+<p>Following the <a href="https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP File Upload Cheat Sheet</a>, secure upload handling requires layered controls:</p>
+<ol>
+<li><strong>Strict Extension Allow-List:</strong> Permit only required extensions (e.g., <code>.png</code>, <code>.jpg</code>, <code>.pdf</code>), checking the final extension after normalization.</li>
+<li><strong>Generate Server-Side Random Filenames:</strong> Never save uploaded files under the user&#x27;s original filename. Store the original name as metadata if needed, and write the file using a random UUID.</li>
+<li><strong>Inspect and Re-encode Content:</strong> Verify magic bytes and, for images, re-encode/strip metadata through an image library (e.g., Pillow or Sharp) to neutralize embedded payloads.</li>
+<li><strong>Enforce Size and Rate Limits:</strong> Reject oversized payloads at the reverse proxy and application layers.</li>
+<li><strong>Isolate Storage and Serving:</strong> Store uploads <strong>outside the webroot</strong> or in dedicated object storage (e.g., S3) served from a separate domain (<code>usercontent.example.net</code>) with <code>Content-Disposition: attachment</code> and <code>X-Content-Type-Options: nosniff</code> so browsers never execute uploaded files as HTML or scripts.</li>
+</ol>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Never pass user-supplied filenames directly to filesystem APIs; canonicalize paths with <code>realpath</code> and verify containment.</li>
+<li>Defense-in-depth upload pipelines validate extensions, inspect magic bytes, re-encode images, and assign random UUID filenames.</li>
+<li>Store uploads outside executable webroots and serve them from an isolated domain with <code>nosniff</code> and <code>Content-Disposition: attachment</code>.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Trace why a single-pass <code>filename.replace(&quot;../&quot;, &quot;&quot;)</code> filter fails against <code>....//etc/passwd</code> and write the canonicalized path-containment check that blocks it.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does stripping the substring <code>../</code> once fail to prevent path traversal?</li>
+<li>Why can an uploaded <code>.svg</code> image trigger Stored XSS even when the server blocks <code>.php</code> and <code>.js</code> files?</li>
+<li>What is a polyglot file, and how does re-encoding uploaded images help neutralize it?</li>
+<li>Why should user-uploaded files be served from a separate domain or with <code>Content-Disposition: attachment</code> and <code>X-Content-Type-Options: nosniff</code>?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP Cheat Sheet Series: <em>File Upload</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html</a></li>
+<li>OWASP Top 10:2021 — <em>A01:2021 Broken Access Control (CWE-22 Path Traversal)</em> — <a href="https://top10.owasp.org/2021/A01_2021-Broken_Access_Control/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/A01_2021-Broken_Access_Control/</a></li>
+<li>OWASP WSTG v4.2: <em>Testing File Extensions &amp; Path Traversal</em> — <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include</a></li>
+</ul>
+    <div class="pager"><a href="08-csrf-clickjacking-and-browser-security-controls.html">&larr; 8. CSRF, Clickjacking, and Browser Defenses</a><a href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

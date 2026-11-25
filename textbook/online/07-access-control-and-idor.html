@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>7. Access Control and Object-Level Authorization | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link active" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-7-access-control-and-object-level-authorization">Chapter 7: Access Control and Object-Level Authorization</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Distinguish <strong>authentication</strong> (who you are) from <strong>authorization</strong> (what you are permitted to do).</li>
+<li>Identify <strong>horizontal</strong>, <strong>vertical</strong>, and <strong>context-dependent</strong> access control failures.</li>
+<li>Test for Insecure Direct Object References (IDOR, <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References/" target="_blank" rel="noopener noreferrer">MITRE CWE-639</a>) using a multi-account test matrix.</li>
+<li>Design <strong>deny-by-default</strong> server-side authorization checks that enforce both role permissions and record ownership.</li>
+</ol>
+<hr>
+<h2 id="7-1-broken-access-control-is-1-for-a-reason">7.1 Broken Access Control Is #1 for a Reason</h2>
+<p>Access control sits at the top of <a href="https://top10.owasp.org/2021/A01_2021-Broken_Access_Control/" target="_blank" rel="noopener noreferrer">OWASP Top 10:2021 (A01 Broken Access Control)</a>. In OWASP&#x27;s 2021 empirical dataset, broken access control appeared at an average incidence rate of <strong>3.81%</strong> with more than <strong>318,000 CWE occurrences</strong>—exceeding injection (<code>3.37%</code> average incidence across 33 CWEs) in overall risk impact. Unlike SQL injection or XSS—which automated scanners often detect with syntax probes—authorization flaws are semantic. A server returning <code>200 OK</code> with JSON data for <code>/api/invoices/1042</code> looks completely normal to a scanner; only a tester who knows that User A should not read User B&#x27;s invoice recognizes the vulnerability.</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-07-owasp-top10-incidence.svg" alt="Figure 7.1: OWASP Top 10:2021 Average Incidence Rate and CWE Occurrences" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 7.1: OWASP Top 10:2021 Average Incidence Rate and CWE Occurrences</figcaption></figure>
+<hr>
+<h2 id="7-2-horizontal-vertical-and-function-level-failures">7.2 Horizontal, Vertical, and Function-Level Failures</h2>
+<p>Access control failures fall into three common patterns:</p>
+<ol>
+<li><strong>Horizontal Privilege Escalation (IDOR):</strong> User A accesses or modifies a resource belonging to User B at the same privilege level—for example, changing <code>GET /api/orders/1001</code> to <code>GET /api/orders/1002</code> or tampering with <code>{&quot;userId&quot;: 2}</code> in a <code>POST</code> body.</li>
+<li><strong>Vertical Privilege Escalation:</strong> A standard user invokes administrative functions—for example, requesting <code>/admin/users</code> directly (<strong>forced browsing</strong>) or adding <code>&quot;role&quot;: &quot;admin&quot;</code> to a profile update payload.</li>
+<li><strong>Missing Function-Level or State-Transition Checks:</strong> An application hides an &quot;Approve&quot; or &quot;Delete&quot; button in the browser UI, or checks authorization on step 1 of a checkout wizard but skips the check on step 3.</li>
+</ol>
+<h3 id="real-world-case-study-next-js-middleware-authorization-bypass-cve-2025-29927">Real-World Case Study: Next.js Middleware Authorization Bypass (<code>CVE-2025-29927</code>)</h3>
+<p>In March 2025, a critical authorization bypass (<code>CVE-2025-29927</code>, CVSS 9.1) was disclosed in Next.js (<a href="https://nvd.nist.gov/vuln/detail/CVE-2025-29927" target="_blank" rel="noopener noreferrer">NVD CVE-2025-29927</a>, <a href="https://www.cve.org/CVERecord?id=CVE-2025-29927" target="_blank" rel="noopener noreferrer">CVE Record</a>). Applications relying solely on Next.js middleware for route protection could be bypassed by sending an external HTTP request containing the internal <code>x-middleware-subrequest</code> header, causing the framework to skip middleware execution entirely and route the request straight to the protected handler. <strong>Never rely on a single edge or middleware layer as your sole authorization gate</strong>—always enforce session and permission checks inside the data-access or route handler itself.</p>
+<hr>
+<h2 id="7-3-why-predictable-ids-and-hidden-ui-controls-fail">7.3 Why Predictable IDs and Hidden UI Controls Fail</h2>
+<p>Two common developer misconceptions create access control bugs:</p>
+<ul>
+<li><strong>Security by obscurity in the UI:</strong> Hiding an admin link in React or Angular does not protect the backend route. Attackers read JavaScript bundles and call APIs directly with <code>curl</code> or a proxy.</li>
+<li><strong>Relying on UUIDs alone:</strong> Switching sequential integers (<code>/users/42</code>) to UUIDv4 (<code>/users/550e8400-e29b-41d4-a716-446655440000</code>) makes guessing harder, <strong>but UUIDs are not authorization</strong>. UUIDs leak in URLs, logs, <code>Referer</code> headers, and list endpoints. If the server does not verify ownership on every request, the endpoint is still vulnerable to IDOR.</li>
+</ul>
+<hr>
+<h2 id="7-4-deny-by-default-authorization-architecture">7.4 Deny-by-Default Authorization Architecture</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-21-authz-decision-flow.svg" alt="Figure 7.2: Deny-by-Default Server-Side Authorization Decision Pipeline" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 7.2: Deny-by-Default Server-Side Authorization Decision Pipeline</figcaption></figure>
+<p>As shown in Figure 7.2, every request must pass through server-derived identity, centralized role policy, and an ownership-scoped database query before returning data.</p>
+<p>A sound authorization design follows four rules from the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Authorization Cheat Sheet</a>:</p>
+<ol>
+<li><strong>Deny by default:</strong> Every route and controller action requires an explicit authorization policy; unauthenticated or unannotated routes fail closed (<code>403 Forbidden</code> or <code>401 Unauthorized</code>).</li>
+<li><strong>Derive identity from the server session, not the request body:</strong> Never trust a client-supplied <code>user_id</code> or <code>role</code> parameter to decide who is acting. Read <code>current_user.id</code> from the verified server session or token.</li>
+<li><strong>Enforce ownership in the data query:</strong> Scope queries to the authenticated owner rather than fetching first and checking later when possible:</li>
+</ol>
+<pre><code class="language-python"># SECURE: Ownership is enforced directly in the database query
+invoice = db.execute(
+    &quot;SELECT * FROM invoices WHERE id = ? AND owner_id = ?&quot;,
+    (invoice_id, current_user.id)
+).fetchone()
+if invoice is None:
+    return abort(404)</code></pre>
+<ol>
+<li><strong>Centralize authorization middleware:</strong> Implement role-based (RBAC) or attribute-based (ABAC) checks in reusable middleware or policy objects rather than scattering <code>if user.is_admin</code> checks inconsistently across handlers.</li>
+</ol>
+<hr>
+<h2 id="7-5-testing-with-a-multi-account-matrix">7.5 Testing with a Multi-Account Matrix</h2>
+<p>To test authorization systematically in <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References/" target="_blank" rel="noopener noreferrer">OWASP WSTG-ATHZ</a>, create at least two accounts at the same privilege level (User A and User B) and one administrative account (Admin):</p>
+<table><thead><tr><th>Endpoint</th><th>Admin</th><th>User A (Owner)</th><th>User B (Non-Owner)</th><th>Unauthenticated</th></tr></thead><tbody><tr><td><code>GET /api/orders/{A_id}</code></td><td><code>200</code> (if policy allows)</td><td><code>200</code></td><td>Must be <code>403</code>/<code>404</code></td><td>Must be <code>401</code></td></tr><tr><td><code>DELETE /api/orders/{A_id}</code></td><td><code>200</code></td><td><code>200</code> (if allowed)</td><td>Must be <code>403</code>/<code>404</code></td><td>Must be <code>401</code></td></tr><tr><td><code>GET /api/admin/audit</code></td><td><code>200</code></td><td>Must be <code>403</code></td><td>Must be <code>403</code></td><td>Must be <code>401</code></td></tr></tbody></table>
+<p>Test every HTTP method (<code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>), because developers sometimes apply authorization middleware to <code>GET</code> handlers while leaving <code>POST</code> or <code>DELETE</code> unprotected.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Broken access control is a semantic flaw that automated scanners routinely miss.</li>
+<li>Enforce deny-by-default authorization on the server, deriving user identity strictly from verified sessions.</li>
+<li>Random UUIDs do not replace ownership checks; test every HTTP method using a multi-account matrix.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Construct a four-role test matrix (Admin, Owner, Non-Owner, Unauthenticated) for <code>GET</code>, <code>PATCH</code>, and <code>DELETE</code> on <code>/api/invoices/{id}</code> and specify the expected HTTP status code for each cell.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why do automated vulnerability scanners struggle to detect IDOR and broken access control?</li>
+<li>Explain why replacing sequential integer IDs with UUIDs does not fix an IDOR vulnerability.</li>
+<li>What is the difference between horizontal and vertical privilege escalation?</li>
+<li>Why should an API derive the acting <code>user_id</code> from the server-side session rather than a JSON body field?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP Top 10:2021 — <em>A01:2021 Broken Access Control</em> — <a href="https://top10.owasp.org/2021/A01_2021-Broken_Access_Control/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/A01_2021-Broken_Access_Control/</a></li>
+<li>OWASP WSTG v4.2: <em>Testing for Insecure Direct Object References</em> — <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References/" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References/</a></li>
+<li>OWASP Cheat Sheet Series: <em>Authorization</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html</a></li>
+</ul>
+    <div class="pager"><a href="06-session-management-and-cookie-security.html">&larr; 6. Session Management and Cookie Security</a><a href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

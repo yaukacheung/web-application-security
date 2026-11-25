@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appendix A: Local Docker Lab Environment | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link active" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="appendix-a-local-docker-lab-environment-and-proxy-setup">Appendix A: Local Docker Lab Environment and Proxy Setup</h1>
+<h2 id="a-1-lab-safety-rules">A.1 Lab Safety Rules</h2>
+<p>Before starting the lab stack:</p>
+<ul>
+<li>Run only the five course-provided Docker containers locally on your workstation.</li>
+<li>Do not bind or expose lab containers to public networks.</li>
+<li>Never reuse personal, university, or workplace passwords inside lab targets.</li>
+<li>Keep a dedicated browser profile (for example, <code>WAS-Labs</code>) with password saving disabled.</li>
+<li>Shut down containers when you finish your lab session.</li>
+</ul>
+<h2 id="a-2-starting-and-stopping-the-lab-stack">A.2 Starting and Stopping the Lab Stack</h2>
+<p>From the repository root (<code>web-application-security/</code>):</p>
+<pre><code class="language-bash"># Start all five lab targets in the background
+docker compose -f docker/docker-compose.yml up -d
+
+# Verify container health and port bindings
+docker compose -f docker/docker-compose.yml ps
+
+# Stop containers when finished
+docker compose -f docker/docker-compose.yml down</code></pre>
+<p>To reset lab databases and volumes back to a clean state:</p>
+<pre><code class="language-bash">docker compose -f docker/docker-compose.yml down -v</code></pre>
+<h2 id="a-3-authorized-local-targets">A.3 Authorized Local Targets</h2>
+<table><thead><tr><th>Service Name</th><th>Container Name</th><th>Local URL</th><th>Primary Chapters</th></tr></thead><tbody><tr><td><code>juice-shop</code></td><td><code>was-juice-shop</code></td><td><code>http://localhost:3000</code></td><td>Chapters 1, 2, 4, 5, 7, 10, 11</td></tr><tr><td><code>dvwa</code></td><td><code>was-dvwa</code></td><td><code>http://localhost:8081</code></td><td>Chapters 1, 3, 6, 9</td></tr><tr><td><code>webgoat</code></td><td><code>was-webgoat</code></td><td><code>http://localhost:8082/WebGoat</code></td><td>Chapters 1, 3, 5, 7, 8, 10</td></tr><tr><td><code>mutillidae</code></td><td><code>was-mutillidae</code></td><td><code>http://localhost:8083</code></td><td>Chapters 1, 4, 6, 8, 9</td></tr><tr><td><code>nodegoat</code></td><td><code>was-nodegoat</code></td><td><code>http://localhost:4000</code></td><td>Chapters 1, 11, 12</td></tr></tbody></table>
+<h2 id="a-4-intercepting-proxy-setup-owasp-zap-burp-suite">A.4 Intercepting Proxy Setup (OWASP ZAP / Burp Suite)</h2>
+<ol>
+<li>Configure your dedicated <code>WAS-Labs</code> browser profile to route HTTP/HTTPS traffic through <code>127.0.0.1:8080</code> (or your configured proxy listener port).</li>
+<li>Enable interception only during active lab exercises and disable the browser proxy afterward.</li>
+<li>If inspecting local TLS traffic, install the proxy CA certificate <strong>only</strong> inside the dedicated lab browser profile—never system-wide.</li>
+</ol>
+<h2 id="a-5-troubleshooting">A.5 Troubleshooting</h2>
+<ul>
+<li><strong>Port already in use:</strong> Stop the conflicting local service or adjust the host port mapping in <code>docker/docker-compose.yml</code>.</li>
+<li><strong>Container unreachable:</strong> Run <code>docker compose -f docker/docker-compose.yml ps</code> and <code>docker compose -f docker/docker-compose.yml logs &lt;service&gt;</code> to confirm startup completed.</li>
+</ul>
+    <div class="pager"><a href="16-transport-cryptography-tls-and-web-hardening.html">&larr; 16. Transport Cryptography, TLS, and Modern Web Hardening</a><a href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

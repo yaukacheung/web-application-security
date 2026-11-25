@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1. Ethics, Authorization, and HTTP Foundations | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link active" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-1-ethics-authorization-and-http-foundations">Chapter 1: Ethics, Authorization, and HTTP Foundations</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Explain the difference between technical curiosity and authorized security testing, and write a bounded scope statement.</li>
+<li>Trace the HTTP request and response lifecycle, including methods, status codes, headers, and message bodies.</li>
+<li>Explain why HTTP is stateless and how applications layer state on top of it.</li>
+<li>Identify trust boundaries in a standard web application stack and distinguish client-side controls from server-side enforcement.</li>
+<li>Capture minimal, reproducible baseline evidence using browser developer tools.</li>
+</ol>
+<hr>
+<h2 id="1-1-authorization-is-the-first-control">1.1 Authorization Is the First Control</h2>
+<p>Web application security sits at the intersection of software engineering and adversarial testing. Before you send a single crafted request or inspect an application for weaknesses, you must answer a legal and professional question: <strong>Do you have explicit permission to test this system?</strong></p>
+<p>Curiosity is not authorization. Finding an exposed administrative endpoint or an unauthenticated API route on a public website does not grant permission to probe it further. Professional security testing operates inside a written <strong>scope</strong> (often formalized as Rules of Engagement) that defines five boundaries:</p>
+<ol>
+<li><strong>System owner:</strong> Who owns or operates the target and has authority to approve testing.</li>
+<li><strong>In-scope assets:</strong> Exact hostnames, IP ranges, ports, or application instances permitted for testing.</li>
+<li><strong>Out-of-scope assets:</strong> Systems, third-party services, or data stores that must not be touched.</li>
+<li><strong>Permitted methods:</strong> Whether active exploitation, automated scanning, or social engineering are allowed or prohibited.</li>
+<li><strong>Stop conditions:</strong> When testing must halt immediately—for example, if a test degrades availability or exposes unexpected personal data.</li>
+</ol>
+<p>In this course, your authorized scope is strictly limited to the intentionally vulnerable local Docker containers started from <code>docker/docker-compose.yml</code> on your own workstation (<code>localhost</code> ports <code>3000</code>, <code>8081</code>, <code>8082</code>, <code>8083</code>, and <code>4000</code>). Public websites, university networks, classmates&#x27; devices, and cloud services are out of scope.</p>
+<hr>
+<h2 id="1-2-the-web-application-stack-and-trust-boundaries">1.2 The Web Application Stack and Trust Boundaries</h2>
+<p>A modern web application is rarely a single program. Even a simple application spans multiple components across distinct execution environments:</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-01-trust-boundaries.svg" alt="Figure 1.1: Web Application Architecture and Trust Boundaries" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 1.1: Web Application Architecture and Trust Boundaries</figcaption></figure>
+<p>A <strong>trust boundary</strong> exists wherever data moves between components with different levels of privilege, control, or validation assumptions. Two boundaries matter in every web application:</p>
+<ul>
+<li><strong>The Browser–Server Boundary:</strong> Everything running in the user&#x27;s browser—HTML, CSS, JavaScript, hidden form fields, cookies, and <code>localStorage</code>—is under the user&#x27;s physical control. A user can inspect, pause, edit, or bypass client-side JavaScript using browser developer tools or an intercepting proxy such as OWASP ZAP or Burp Suite. Client-side validation improves usability by catching typos early, but <strong>client-side controls never enforce security</strong>.</li>
+<li><strong>The Application–Backend Boundary:</strong> When application code constructs a database query, renders HTML, reads a file from disk, or calls an internal microservice, it crosses another boundary. Vulnerabilities occur when the application assumes data arriving from the browser—or from another external service—is safe without validating or parameterizing it.</li>
+</ul>
+<p>When analyzing any feature, start with two questions: <em>What can the user control?</em> and <em>What does the server trust?</em> User-controlled input includes far more than visible text boxes; it includes URL paths, query strings, HTTP methods, request headers (<code>User-Agent</code>, <code>Referer</code>, <code>X-Forwarded-For</code>), cookies, JSON payloads, and uploaded file metadata.</p>
+<hr>
+<h2 id="1-3-http-foundations">1.3 HTTP Foundations</h2>
+<p>The Hypertext Transfer Protocol (HTTP), standardized in <a href="https://www.rfc-editor.org/info/rfc9110/" target="_blank" rel="noopener noreferrer">IETF RFC 9110 (HTTP Semantics)</a>, is a stateless, text-based (or binary-framed in HTTP/2 and HTTP/3) request-response protocol. A client opens a connection, sends a request, and receives a response.</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-18-http-request-response.svg" alt="Figure 1.2: HTTP Request–Response Structure and Layered State" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 1.2: HTTP Request–Response Structure and Layered State</figcaption></figure>
+<p>Figure 1.2 summarizes the components of an HTTP exchange across both directions of the wire.</p>
+<h3 id="request-anatomy">Request Anatomy</h3>
+<p>An HTTP/1.1 request consists of a request line, headers, an optional blank line, and an optional body:</p>
+<pre><code class="language-http">POST /api/v1/login HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+Cookie: language=en
+Content-Length: 45
+
+{&quot;email&quot;:&quot;student@example.edu&quot;,&quot;password&quot;:&quot;...&quot;}</code></pre>
+<p>Key elements to inspect during baseline observation:</p>
+<ul>
+<li><strong>Method:</strong> <code>GET</code> retrieves a resource and should be <strong>safe</strong> (no side effects) and <strong>idempotent</strong> (repeating the request produces the same state). <code>POST</code> submits data or triggers non-idempotent state changes. <code>PUT</code> replaces a target resource, <code>PATCH</code> applies partial modifications, and <code>DELETE</code> removes a resource. Applications do not always enforce method semantics—for example, a server might accidentally process a state change over <code>GET</code>, which exposes it to caching leaks, <code>Referer</code> leaks, and cross-site request forgery.</li>
+<li><strong>Path and Query String:</strong> The target route (<code>/api/v1/login</code>) and any key-value parameters (<code>?id=42&amp;sort=asc</code>). Note that URL paths are normalized differently across reverse proxies and backend frameworks, which can create authorization bypasses if the proxy and application disagree on path canonicalization.</li>
+<li><strong>Headers:</strong> Metadata controlling host routing (<code>Host</code>), media types (<code>Content-Type</code>, <code>Accept</code>), authentication (<code>Authorization</code>), proxy forwarding (<code>X-Forwarded-For</code>, <code>X-Forwarded-Host</code>), and origin context (<code>Origin</code>, <code>Referer</code>). Because a reverse proxy often sits in front of the application, trusting unvalidated <code>Host</code> or <code>X-Forwarded-*</code> headers can lead to password-reset poisoning and routing confusion.</li>
+<li><strong>Cookies:</strong> Key-value pairs sent automatically by the browser on matching requests.</li>
+</ul>
+<h3 id="response-anatomy">Response Anatomy</h3>
+<p>The server replies with a status line, response headers, and an optional body:</p>
+<pre><code class="language-http">HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Set-Cookie: session_id=9f8a7b6c5d4e; HttpOnly; SameSite=Lax; Path=/
+Cache-Control: no-store
+X-Content-Type-Options: nosniff
+
+{&quot;status&quot;:&quot;authenticated&quot;}</code></pre>
+<p>Status codes group into five classes under RFC 9110:</p>
+<table><thead><tr><th>Range</th><th>Meaning</th><th>Security Observation Value</th></tr></thead><tbody><tr><td><code>1xx</code></td><td>Informational</td><td>Protocol upgrade (e.g., <code>101 Switching Protocols</code> for WebSockets)</td></tr><tr><td><code>2xx</code></td><td>Success</td><td>Request accepted; confirm whether authorization actually checked the caller</td></tr><tr><td><code>3xx</code></td><td>Redirection</td><td><code>301</code>/<code>302</code> redirects; check whether protected body content still leaks in the response</td></tr><tr><td><code>4xx</code></td><td>Client error</td><td><code>400</code> malformed input, <code>401</code> unauthenticated, <code>403</code> unauthorized, <code>404</code> not found</td></tr><tr><td><code>5xx</code></td><td>Server error</td><td>Unhandled exceptions (<code>500</code>); often signal parser confusion or missing input checks</td></tr></tbody></table>
+<p>Status codes are signals, not proof. A <code>403 Forbidden</code> on <code>/admin</code> does not prove access control is sound if <code>POST /admin</code> or <code>/Admin</code> returns <code>200 OK</code>. Conversely, a <code>200 OK</code> on a login endpoint might still contain an error JSON message. Always read the response body and headers together.</p>
+<hr>
+<h2 id="1-4-statelessness-and-layered-state">1.4 Statelessness and Layered State</h2>
+<p>HTTP itself has no memory of previous requests. Every request arrives independently. Because web applications need to remember who logged in, what is in a shopping cart, or which step of a multi-page workflow a user completed, developers layer state onto HTTP using:</p>
+<ul>
+<li><strong>Cookies</strong> (<a href="https://www.rfc-editor.org/info/rfc6265/" target="_blank" rel="noopener noreferrer">IETF RFC 6265</a>), stored by the browser and attached automatically to matching requests.</li>
+<li><strong>Server-side sessions</strong>, where the cookie holds only an opaque random identifier mapped to server memory or a database.</li>
+<li><strong>Bearer tokens</strong> (such as JSON Web Tokens) sent in the <code>Authorization</code> header or stored in browser storage.</li>
+<li><strong>Hidden form fields or URL parameters</strong>, which are entirely visible and modifiable by the client.</li>
+</ul>
+<p>Many high-impact vulnerabilities appear where state assumptions break—for instance, trusting a client-supplied <code>role=admin</code> cookie or failing to invalidate a session on logout.</p>
+<hr>
+<h2 id="1-5-minimal-reproducible-evidence">1.5 Minimal, Reproducible Evidence</h2>
+<p>Good security work depends on evidence quality. A full-screen screenshot with no URL, no timestamp, and no request context proves very little to an engineering team trying to reproduce and fix a bug.</p>
+<p>Effective baseline evidence is:</p>
+<ul>
+<li><strong>Scoped:</strong> Clearly identifies the authorized local target (<code>http://localhost:3000</code>).</li>
+<li><strong>Dated:</strong> Includes when the observation occurred.</li>
+<li><strong>Reproducible:</strong> Shows the exact method, path, headers, and input that produced the response.</li>
+<li><strong>Minimal:</strong> Captures only what supports the claim, with unrelated tokens or personal data redacted.</li>
+</ul>
+<p>In browser developer tools (Network tab), you can inspect the exact request headers, response headers, status code, and cookies for every resource loaded by a page. Learning to read raw HTTP traffic directly is the foundation for every lab in this course.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Written authorization and explicit scope boundaries must precede every security test.</li>
+<li>HTTP is stateless; applications layer state via cookies, sessions, and tokens, creating trust boundaries.</li>
+<li>Client-side validation improves usability, but only server-side enforcement provides security.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Inspect the network requests of a local web application in browser developer tools, identify three distinct user-controlled input vectors outside HTML form fields, and draft a five-part scope statement for testing it.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why is client-side input validation useful for user experience yet insufficient as a security control?</li>
+<li>What is the difference between a <code>401 Unauthorized</code> and a <code>403 Forbidden</code> status code under RFC 9110?</li>
+<li>Why should a tester capture raw HTTP request/response metadata rather than relying solely on a cropped screenshot?</li>
+<li>Name three places in an HTTP request, outside visible HTML form inputs, where a user can supply untrusted data.</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>IETF RFC 9110: <em>HTTP Semantics</em> — <a href="https://www.rfc-editor.org/info/rfc9110/" target="_blank" rel="noopener noreferrer">https://www.rfc-editor.org/info/rfc9110/</a></li>
+<li>IETF RFC 6265: <em>HTTP State Management Mechanism</em> — <a href="https://www.rfc-editor.org/info/rfc6265/" target="_blank" rel="noopener noreferrer">https://www.rfc-editor.org/info/rfc6265/</a></li>
+<li>OWASP Web Security Testing Guide (WSTG v4.2) — <a href="https://wstg.owasp.org/v4.2/" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/</a></li>
+<li>OWASP Cheat Sheet Series: <em>HTTP Headers</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html</a></li>
+</ul>
+    <div class="pager"><a href="00-preface.html">&larr; Preface &amp; Safety Model</a><a href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

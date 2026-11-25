@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>11. API Security and Modern Application Patterns | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link active" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-11-api-security-and-modern-application-patterns">Chapter 11: API Security and Modern Application Patterns</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Map REST and JSON API risks to the <a href="https://api-security.owasp.org/editions/2023/en/0x03-introduction/" target="_blank" rel="noopener noreferrer">OWASP API Security Top 10 (2023)</a>.</li>
+<li>Identify <strong>Broken Object Level Authorization (BOLA)</strong>, <strong>Broken Object Property Level Authorization (mass assignment / excessive data exposure)</strong>, and <strong>Broken Function Level Authorization (BFLA)</strong>.</li>
+<li>Audit <strong>Cross-Origin Resource Sharing (CORS)</strong> headers (<code>Access-Control-Allow-Origin</code>, <code>Access-Control-Allow-Credentials</code>) for origin-reflection flaws.</li>
+<li>Design practical rate limiting, pagination caps, and API inventory controls.</li>
+</ol>
+<hr>
+<h2 id="11-1-why-apis-have-distinct-failure-modes">11.1 Why APIs Have Distinct Failure Modes</h2>
+<p>Modern web applications expose JSON endpoints consumed by SPAs, mobile clients, and partner integrations. While classic injection still applies, APIs fail most often on <strong>authorization, schema binding, and resource governance</strong>.</p>
+<p>The <a href="https://api-security.owasp.org/editions/2023/en/0x03-introduction/" target="_blank" rel="noopener noreferrer">OWASP API Security Top 10 (2023)</a> highlights the primary risk categories:</p>
+<table><thead><tr><th>OWASP API Risk</th><th>Core Engineering Mistake</th><th>Example</th></tr></thead><tbody><tr><td><strong>API1: BOLA</strong></td><td>Failing to verify object ownership on <code>/api/items/{id}</code></td><td>Reading or editing another tenant&#x27;s record</td></tr><tr><td><strong>API2: Broken Authentication</strong></td><td>Weak token validation, missing expiration, or credential stuffing</td><td>Accepting unsigned or expired JWTs</td></tr><tr><td><strong>API3: Broken Object Property Level Authorization</strong></td><td>Returning full database objects or binding raw JSON directly to models (<strong>mass assignment</strong>)</td><td>Sending <code>{&quot;isAdmin&quot;: true, &quot;balance&quot;: 0}</code> in a profile <code>PATCH</code></td></tr><tr><td><strong>API4: Unrestricted Resource Consumption</strong></td><td>Missing pagination limits, rate limits, or payload size caps</td><td>Requesting <code>?limit=10000000</code></td></tr><tr><td><strong>API5: BFLA</strong></td><td>Leaving admin/internal API methods accessible to standard users</td><td>Calling <code>DELETE /api/v1/users/5</code> as a regular user</td></tr><tr><td><strong>API8: Security Misconfiguration</strong></td><td>Permissive CORS, verbose stack traces, missing TLS</td><td>Reflecting arbitrary <code>Origin</code> headers with credentials</td></tr><tr><td><strong>API9: Improper Inventory Management</strong></td><td>Leaving deprecated <code>/api/v1/</code> or shadow endpoints running unpatched</td><td>Old API version bypassing new MFA rules</td></tr></tbody></table>
+<hr>
+<h2 id="11-2-mass-assignment-bola-and-cors-boundaries">11.2 Mass Assignment, BOLA, and CORS Boundaries</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-13-api-cors-and-bola.svg" alt="Figure 11.1: API Boundary Controls (CORS Allow-List, BOLA, and BOPLA)" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 11.1: API Boundary Controls (CORS Allow-List, BOLA, and BOPLA)</figcaption></figure>
+<p>Figure 11.1 shows how three independent API gates work together: the edge enforces an exact <code>Origin</code> allow-list and rate limits, the application handler verifies JWT claims, record ownership (preventing BOLA), and writable property schemas (preventing mass assignment), and the response layer projects only safe DTO fields.</p>
+<p>ORMs make it tempting to pass <code>req.body</code> directly into a database update:</p>
+<pre><code class="language-javascript">// VULNERABLE: Raw request body bound directly to user model
+await User.update(req.body, { where: { id: req.user.id } });</code></pre>
+<p>If the <code>User</code> model has <code>role</code>, <code>isVerified</code>, or <code>accountBalance</code> columns, an attacker can include those properties in the JSON body.</p>
+<p><strong>Fix:</strong> Explicitly pick allowed input fields on write (using a schema validator like Zod, Joi, or Pydantic) and explicitly project allowed output fields on read (Data Transfer Objects) so internal fields such as <code>passwordHash</code> or <code>internalNotes</code> are never serialized into API responses.</p>
+<hr>
+<h2 id="11-3-cross-origin-resource-sharing-cors">11.3 Cross-Origin Resource Sharing (CORS)</h2>
+<p>As documented in the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS" target="_blank" rel="noopener noreferrer">MDN CORS Guide</a>, CORS selectively relaxes the Same-Origin Policy so an API on <code>api.example</code> can allow a frontend on <code>app.example</code> to read its responses.</p>
+<h3 id="dangerous-cors-misconfigurations">Dangerous CORS Misconfigurations</h3>
+<ol>
+<li><strong>Reflecting the <code>Origin</code> header blindly:</strong></li>
+</ol>
+<pre><code class="language-http">   Access-Control-Allow-Origin: https://untrusted.example
+   Access-Control-Allow-Credentials: true</code></pre>
+<p>When combined with <code>Allow-Credentials: true</code>, <strong>any website</strong> can make credentialed <code>fetch()</code> requests and read the user&#x27;s private API data.</p>
+<ol>
+<li><strong>Trusting <code>Origin: null</code>:</strong> Sandboxed iframes (<code>&lt;iframe sandbox&gt;</code>) send <code>Origin: null</code>. Allow-listing <code>&quot;null&quot;</code> lets untrusted pages read responses.</li>
+<li><strong>Broken regex matching:</strong> Checking <code>origin.endsWith(&quot;example.com&quot;)</code> matches <code>notexample.com</code>.</li>
+</ol>
+<p><strong>Fix:</strong> Validate the incoming <code>Origin</code> header against an exact, hardcoded set of trusted origins (<code>https://app.example</code>), never reflect arbitrary origins, and never combine <code>Access-Control-Allow-Credentials: true</code> with unvalidated origins.</p>
+<hr>
+<h2 id="11-4-rate-limiting-graphql-and-api-governance">11.4 Rate Limiting, GraphQL, and API Governance</h2>
+<p>Every public API needs bounded resource consumption:</p>
+<ul>
+<li>Enforce <strong>per-user and per-IP rate limits</strong> (returning <code>429 Too Many Requests</code> with <code>Retry-After</code>), especially on login, OTP verification, search, and export endpoints.</li>
+<li>Cap pagination <code>limit</code> parameters server-side (e.g., max <code>100</code> items per page).</li>
+<li>Maintain an <strong>API inventory</strong> (OpenAPI/Swagger specs matched against deployed routes) and retire deprecated API versions on a schedule so forgotten v1 endpoints do not bypass current security controls.</li>
+</ul>
+<h3 id="graphql-and-oauth-2-0-oidc-considerations">GraphQL and OAuth 2.0 / OIDC Considerations</h3>
+<p>GraphQL APIs expose a single <code>/graphql</code> endpoint with flexible client-defined queries, introducing distinct failure modes:</p>
+<ul>
+<li><strong>Introspection exposure:</strong> Disable schema introspection in production if the schema is not intended to be public.</li>
+<li><strong>Query depth and batching DoS:</strong> Deeply nested queries (<code>user { friends { friends { ... } } }</code>) or batched query arrays can exhaust server CPU and database connections unless depth limits and query-cost analysis are enforced.</li>
+<li><strong>Field-level authorization:</strong> Verify object and property permissions inside every GraphQL resolver, not only at the HTTP gateway.</li>
+</ul>
+<p>For OAuth 2.0 and OpenID Connect APIs, always validate <code>redirect_uri</code> with exact string matching, verify token <code>aud</code> (audience), <code>iss</code> (issuer), and <code>scope</code> claims on every resource server, and use PKCE (<code>code_challenge</code>) for public clients.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>APIs fail most often on object-level authorization (BOLA), property-level binding (BOPLA), and unrestricted resource consumption.</li>
+<li>Use explicit input schemas on write and DTO projections on read to stop mass assignment and excessive data exposure.</li>
+<li>Validate CORS <code>Origin</code> headers against exact allow-lists and enforce query-depth limits on GraphQL endpoints.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Inspect a <code>PATCH /api/users/me</code> handler that passes <code>req.body</code> directly to an ORM update and returns the full database row. Propose an explicit input schema and DTO response.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>What is the difference between BOLA (API1) and Broken Object Property Level Authorization (API3)?</li>
+<li>Why does reflecting the <code>Origin</code> header alongside <code>Access-Control-Allow-Credentials: true</code> defeat the Same-Origin Policy?</li>
+<li>How do Data Transfer Objects (DTOs) and explicit input schemas prevent mass assignment and excessive data exposure?</li>
+<li>Why is <code>API9: Improper Inventory Management</code> a major risk for long-lived web platforms?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP API Security Top 10 (2023) — <a href="https://api-security.owasp.org/editions/2023/en/0x03-introduction/" target="_blank" rel="noopener noreferrer">https://api-security.owasp.org/editions/2023/en/0x03-introduction/</a></li>
+<li>MDN Web Docs: <em>Cross-Origin Resource Sharing (CORS)</em> — <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS" target="_blank" rel="noopener noreferrer">https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS</a></li>
+<li>OWASP Cheat Sheet Series: <em>REST Security</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html</a></li>
+</ul>
+    <div class="pager"><a href="10-ssrf-deserialization-and-server-side-abuse.html">&larr; 10. SSRF, Deserialization, and Backend Trust</a><a href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

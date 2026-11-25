@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>8. CSRF, Clickjacking, and Browser Defenses | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link active" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-8-cross-site-request-forgery-clickjacking-and-browser-defenses">Chapter 8: Cross-Site Request Forgery, Clickjacking, and Browser Defenses</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Explain the <strong>Same-Origin Policy (SOP)</strong> and how <strong>ambient credentials</strong> (automatic cookie attachment) enable Cross-Site Request Forgery (CSRF).</li>
+<li>Implement and audit <strong>synchronizer tokens</strong>, <strong>SameSite</strong> cookies, and <strong>Fetch Metadata</strong> defenses.</li>
+<li>Explain <strong>clickjacking</strong> (UI redressing) and prevent it using CSP <code>frame-ancestors</code> and <code>X-Frame-Options</code>.</li>
+<li>Recognize why <strong>XSS defeats all CSRF defenses</strong> on the same origin.</li>
+</ol>
+<hr>
+<h2 id="8-1-the-same-origin-policy-and-ambient-authority">8.1 The Same-Origin Policy and Ambient Authority</h2>
+<p>An <strong>origin</strong> is the tuple <code>(scheme, host, port)</code>. For example, <code>https://app.example:443</code> and <code>http://app.example:80</code> are different origins (different scheme and port). Under the <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Same-origin_policy" target="_blank" rel="noopener noreferrer">Same-Origin Policy (MDN)</a>, browsers generally block JavaScript in one origin from <strong>reading</strong> responses from another origin, <strong>but cross-origin writes—such as HTML form submissions, links, and redirects—are permitted by default</strong>.</p>
+<p>When a user is signed into <code>app.example</code> with a session cookie and visits an untrusted third-party page <code>other.example</code>, a hidden <code>&lt;form&gt;</code> on <code>other.example</code> can submit a <code>POST</code> request to <code>app.example/account/email</code>. Because cookies act as <strong>ambient credentials</strong>, the browser automatically attaches the user&#x27;s <code>app.example</code> session cookie unless restricted. That is <strong>Cross-Site Request Forgery (CSRF)</strong> (<a href="https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html" target="_blank" rel="noopener noreferrer">MITRE CWE-352</a>).</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-04-csrf-sop-flow.svg" alt="Figure 8.1: Same-Origin Policy vs. CSRF Ambient Credentials" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 8.1: Same-Origin Policy vs. CSRF Ambient Credentials</figcaption></figure>
+<hr>
+<h2 id="8-2-csrf-defenses">8.2 CSRF Defenses</h2>
+<p>Per the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP CSRF Prevention Cheat Sheet</a>, effective CSRF protection combines token-based verification with browser-level signals:</p>
+<h3 id="1-synchronizer-token-pattern-primary-defense">1. Synchronizer Token Pattern (Primary Defense)</h3>
+<p>The server generates an unpredictable, per-session (or per-request) cryptographic <strong>CSRF token</strong> and embeds it in the HTML form or provides it to same-origin JavaScript to send in a custom header (e.g., <code>X-CSRF-Token</code>). On every state-changing request (<code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>), the server compares the submitted token against the session&#x27;s expected token using constant-time comparison.</p>
+<p>Because the Same-Origin Policy prevents <code>other.example</code> from reading the token from <code>app.example</code>, <code>other.example</code> cannot produce a valid state-changing request.</p>
+<h3 id="2-samesite-cookie-attribute">2. <code>SameSite</code> Cookie Attribute</h3>
+<ul>
+<li><code>SameSite=Strict</code>: Never sends the cookie on any cross-site request, including clicking a normal link from an external site.</li>
+<li><code>SameSite=Lax</code> (modern browser default): Blocks cookies on cross-site <code>POST</code> forms and background subrequests, while allowing cookies on top-level <code>GET</code> navigations.</li>
+</ul>
+<p><strong>Warning:</strong> <code>SameSite=Lax</code> does <strong>not</strong> protect <code>GET</code> endpoints that accidentally perform state changes (e.g., <code>GET /account/delete</code>). Never use <code>GET</code> for state-changing operations.</p>
+<h3 id="3-custom-request-headers-and-fetch-metadata">3. Custom Request Headers and Fetch Metadata</h3>
+<p>For JSON APIs using <code>fetch()</code>, requiring a non-simple custom header (such as <code>X-Requested-With</code> or <code>Authorization: Bearer &lt;token&gt;</code>) triggers a CORS preflight check (<code>OPTIONS</code>), which cross-origin pages cannot pass unless CORS is misconfigured. Modern browsers also send <strong>Fetch Metadata</strong> headers (<code>Sec-Fetch-Site: cross-site</code> vs. <code>same-origin</code>, <code>Sec-Fetch-Mode</code>, <code>Sec-Fetch-Dest</code>), which cannot be forged by client-side JavaScript. A server can inspect <code>Sec-Fetch-Site</code> and reject cross-site state-changing requests (<code>POST</code>, <code>PUT</code>, <code>DELETE</code>) before any business logic executes.</p>
+<h3 id="4-double-submit-cookie-pattern-stateless-fallback">4. Double-Submit Cookie Pattern (Stateless Fallback)</h3>
+<p>When an application cannot maintain server-side session state for CSRF tokens, the <strong>Double-Submit Cookie</strong> pattern sets a random CSRF token in a cookie and requires the client to also send that exact token in a custom header or form field. To prevent subdomain cookie-tossing bypasses, bind the CSRF token cryptographically to the user session identifier using HMAC (<code>HMAC(secret, session_id + random_nonce)</code>).</p>
+<h3 id="why-xss-defeats-csrf-defenses">Why XSS Defeats CSRF Defenses</h3>
+<p>If an application has an XSS vulnerability on the same origin, injected JavaScript runs <em>inside</em> the trusted origin—it can read the CSRF token directly from the DOM and submit authenticated requests. Fixing XSS is a prerequisite for trustworthy CSRF protection.</p>
+<hr>
+<h2 id="8-3-clickjacking-ui-redressing">8.3 Clickjacking (UI Redressing)</h2>
+<p><strong>Clickjacking</strong> tricks a user into clicking a visible button on an untrusted page while actually clicking a transparent <code>&lt;iframe&gt;</code> overlaid on top—for example, a benign-looking button positioned directly over an embedded &quot;Delete Account&quot; or &quot;Authorize App&quot; button.</p>
+<p>CSRF tokens do <strong>not</strong> stop clickjacking because the user is interacting with the real, legitimate page inside the iframe—the valid CSRF token is already present.</p>
+<h3 id="framing-defenses">Framing Defenses</h3>
+<p>Prevent unauthorized framing with <strong>Content Security Policy <code>frame-ancestors</code></strong> (and <code>X-Frame-Options</code> for legacy browser compatibility):</p>
+<pre><code class="language-http">Content-Security-Policy: frame-ancestors &#x27;none&#x27;;
+X-Frame-Options: DENY</code></pre>
+<p>Use <code>&#x27;self&#x27;</code> instead of <code>&#x27;none&#x27;</code> (<code>SAMEORIGIN</code> in <code>X-Frame-Options</code>) if the application legitimately embeds its own pages in iframes.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>CSRF exploits ambient cookie attachment across origins because SOP permits cross-origin writes by default.</li>
+<li>Combine synchronizer tokens, <code>SameSite=Lax</code>/<code>Strict</code> cookies, and Fetch Metadata (<code>Sec-Fetch-Site</code>) for state-changing requests.</li>
+<li>Prevent clickjacking with <code>Content-Security-Policy: frame-ancestors</code> and <code>X-Frame-Options</code>.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Analyze a <code>GET /account/disable</code> endpoint protected only by <code>SameSite=Lax</code> cookies. Explain why it remains vulnerable to CSRF and describe two changes required to secure it.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does the Same-Origin Policy stop a cross-origin script from reading account data yet still allow a CSRF form submission?</li>
+<li>Why does <code>SameSite=Lax</code> fail to protect an application that changes user email addresses via a <code>GET</code> request?</li>
+<li>Why do CSRF tokens fail to prevent clickjacking, and which HTTP headers prevent clickjacking instead?</li>
+<li>Explain why any XSS vulnerability on an origin undermines that origin&#x27;s CSRF tokens.</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>MDN Web Docs: <em>Same-origin policy</em> — <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Same-origin_policy" target="_blank" rel="noopener noreferrer">https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Same-origin_policy</a></li>
+<li>OWASP Cheat Sheet Series: <em>Cross-Site Request Forgery Prevention</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html</a></li>
+<li>MDN Web Docs: <em>Cross-site request forgery (CSRF)</em> — <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF" target="_blank" rel="noopener noreferrer">https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF</a></li>
+<li>MITRE CWE-352 (CWE Top 25) — <a href="https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html" target="_blank" rel="noopener noreferrer">https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html</a></li>
+</ul>
+    <div class="pager"><a href="07-access-control-and-idor.html">&larr; 7. Access Control and Object-Level Authorization</a><a href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

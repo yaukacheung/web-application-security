@@ -1,0 +1,12 @@
+web-application-security/
+├── syllabus/
+├── lectures/
+├── labs/
+├── quizzes/
+├── exams/
+├── project/
+├── setup/
+├── docker/
+├── templates/
+├── docs/
+└── .github/workflows/

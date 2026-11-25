@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>16. Transport Cryptography, TLS, and Modern Web Hardening | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link active" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-16-transport-cryptography-tls-and-modern-web-hardening">Chapter 16: Transport Cryptography, TLS, and Modern Web Hardening</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Explain how <strong>HTTPS (HTTP over TLS)</strong> protects confidentiality, integrity, and server authenticity (<a href="https://www.rfc-editor.org/info/rfc9110/" target="_blank" rel="noopener noreferrer">IETF RFC 9110</a>, <a href="https://www.rfc-editor.org/subjects/tls/" target="_blank" rel="noopener noreferrer">RFC 8446</a>).</li>
+<li>Identify weak transport configurations (deprecated TLS 1.0/1.1, mixed content, missing certificate validation) mapped to <a href="https://top10.owasp.org/2021/A02_2021-Cryptographic_Failures/" target="_blank" rel="noopener noreferrer">OWASP A02:2021 (Cryptographic Failures)</a>.</li>
+<li>Configure <strong>HTTP Strict Transport Security (HSTS)</strong> (<a href="https://www.ietf.org/archive/id/draft-ietf-uta-rfc7525bis-11.html" target="_blank" rel="noopener noreferrer">RFC 6797</a>) and modern browser security headers (<code>X-Content-Type-Options</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code>).</li>
+<li>Audit TLS and header posture without overclaiming local-development exceptions.</li>
+</ol>
+<hr>
+<h2 id="16-1-why-transport-security-underpins-every-control">16.1 Why Transport Security Underpins Every Control</h2>
+<p>Every defense earlier in this book—<code>HttpOnly</code> cookies, CSRF tokens, password login forms, and Bearer JWTs—assumes the network channel between browser and server cannot be read or modified in transit. Without Transport Layer Security (TLS), an on-path attacker on public Wi-Fi or a compromised router can both <strong>passively eavesdrop</strong> on plaintext credentials and <strong>actively tamper</strong> with responses—for example, injecting malicious JavaScript into an unencrypted HTML page or stripping security headers.</p>
+<p>HTTPS (HTTP over TLS) solves this by combining asymmetric authentication (verifying the server&#x27;s X.509 certificate chain against trusted Certificate Authorities) with symmetric authenticated encryption (protecting both confidentiality and integrity for every HTTP request and response).</p>
+<p>Under <a href="https://top10.owasp.org/2021/A02_2021-Cryptographic_Failures/" target="_blank" rel="noopener noreferrer">OWASP Top 10:2021 A02 (Cryptographic Failures)</a>, transport failures remain a common root cause of sensitive data exposure.</p>
+<hr>
+<h2 id="16-2-tls-1-3-and-deprecated-protocols">16.2 TLS 1.3 and Deprecated Protocols</h2>
+<p>Modern web servers should support <strong>TLS 1.3</strong> (<a href="https://www.rfc-editor.org/subjects/tls/" target="_blank" rel="noopener noreferrer">RFC 8446</a>) and optionally <strong>TLS 1.2</strong> with strong forward-secret cipher suites (AEAD ciphers such as AES-GCM or ChaCha20-Poly1305).</p>
+<ul>
+<li><strong>Disable legacy protocols:</strong> SSL 2.0, SSL 3.0, TLS 1.0, and TLS 1.1 are formally deprecated by the IETF (<strong>RFC 8996</strong>) due to structural cryptographic weaknesses and padding-oracle attacks.</li>
+<li><strong>Forward secrecy:</strong> Ephemeral key exchange (ECDHE) ensures that even if a server&#x27;s long-term private key is compromised later, past recorded traffic cannot be decrypted.</li>
+<li><strong>Certificate verification:</strong> Clients and backend services calling partner APIs must verify both the certificate chain and hostname match. Disabling verification (<code>verify=False</code> or <code>NODE_TLS_REJECT_UNAUTHORIZED=0</code>) in production turns HTTPS into unauthenticated encryption vulnerable to active interception.</li>
+</ul>
+<hr>
+<h2 id="16-3-hsts-and-mixed-content">16.3 HSTS and Mixed Content</h2>
+<p>Even when a site supports HTTPS, a user typing <code>example.com</code> in the address bar starts with an initial plain <code>http://</code> request before being redirected to <code>https://</code>. An on-path attacker can intercept that first unencrypted redirect (<strong>SSL stripping</strong>).</p>
+<h3 id="http-strict-transport-security-hsts">HTTP Strict Transport Security (HSTS)</h3>
+<p>Sending the <code>Strict-Transport-Security</code> header instructs browsers to automatically upgrade all future requests for that host to HTTPS before sending any packet over the network:</p>
+<pre><code class="language-http">Strict-Transport-Security: max-age=31536000; includeSubDomains</code></pre>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-09-tls-hsts-upgrade.svg" alt="Figure 16.1: Redirect-Only Downgrade Risk vs. HSTS Browser Upgrade" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 16.1: Redirect-Only Downgrade Risk vs. HSTS Browser Upgrade</figcaption></figure>
+<h3 id="mixed-content-and-subresource-integrity-sri">Mixed Content and Subresource Integrity (SRI)</h3>
+<p>A page loaded over <code>https://</code> that embeds an external <code>&lt;script src=&quot;http://...&quot;&gt;</code> reintroduces tampering risk. Modern browsers block <strong>active mixed content</strong> (scripts, stylesheets, <code>fetch()</code> over HTTP) by default. When loading third-party scripts or stylesheets from a CDN over HTTPS, add <strong>Subresource Integrity (<code>integrity=&quot;sha384-...&quot;</code>)</strong> so the browser verifies the cryptographic hash of the downloaded asset before executing it.</p>
+<hr>
+<h2 id="16-4-essential-security-response-headers">16.4 Essential Security Response Headers</h2>
+<p>Beyond TLS and CSP, a hardened web server emits a consistent baseline of response headers (<a href="https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP HTTP Headers Cheat Sheet</a>):</p>
+<table><thead><tr><th>Header</th><th>Recommended Value</th><th>Purpose</th></tr></thead><tbody><tr><td><code>Strict-Transport-Security</code></td><td><code>max-age=31536000; includeSubDomains</code></td><td>Forces HTTPS and prevents SSL stripping</td></tr><tr><td><code>X-Content-Type-Options</code></td><td><code>nosniff</code></td><td>Prevents browsers from MIME-sniffing non-script files as executable JS/CSS</td></tr><tr><td><code>Referrer-Policy</code></td><td><code>strict-origin-when-cross-origin</code></td><td>Prevents full URLs (and query parameters) from leaking in cross-origin <code>Referer</code> headers</td></tr><tr><td><code>Permissions-Policy</code></td><td><code>geolocation=(), camera=(), microphone=()</code></td><td>Disables unused powerful browser APIs</td></tr><tr><td><code>Cache-Control</code></td><td><code>no-store</code> (on sensitive/authenticated responses)</td><td>Prevents shared proxies or browsers from caching private data</td></tr></tbody></table>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Transport security (TLS 1.3 with forward secrecy) underpins cookies, tokens, and authentication forms.</li>
+<li>Disable deprecated TLS 1.0/1.1 (RFC 8996) and never disable certificate verification in production.</li>
+<li>Combine HSTS (<code>Strict-Transport-Security</code>), SRI for external scripts, <code>nosniff</code>, and <code>Referrer-Policy</code>.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Audit a production web server response that redirects HTTP to HTTPS without HSTS and loads a third-party CDN script without an <code>integrity</code> attribute. Write the exact hardened headers and <code>&lt;script&gt;</code> tag.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does redirecting <code>http://</code> to <code>https://</code> alone fail to stop SSL stripping, and how does HSTS solve this?</li>
+<li>What does <code>verify=False</code> or <code>NODE_TLS_REJECT_UNAUTHORIZED=0</code> break in TLS?</li>
+<li>Why is <code>X-Content-Type-Options: nosniff</code> important on endpoints serving user-uploaded or dynamic files?</li>
+<li>Why does <code>Referrer-Policy: strict-origin-when-cross-origin</code> protect sensitive query parameters?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP Top 10:2021 — <em>A02:2021 Cryptographic Failures</em> — <a href="https://top10.owasp.org/2021/A02_2021-Cryptographic_Failures/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/A02_2021-Cryptographic_Failures/</a></li>
+<li>IETF RFC 9110: <em>HTTP Semantics</em> — <a href="https://www.rfc-editor.org/info/rfc9110/" target="_blank" rel="noopener noreferrer">https://www.rfc-editor.org/info/rfc9110/</a></li>
+<li>IETF TLS Specifications (RFC 8446 / RFC 8996) — <a href="https://www.rfc-editor.org/subjects/tls/" target="_blank" rel="noopener noreferrer">https://www.rfc-editor.org/subjects/tls/</a></li>
+<li>OWASP Cheat Sheet Series: <em>HTTP Headers</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html</a></li>
+<li>MDN Web Docs: <em>Mixed Content</em> — <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content" target="_blank" rel="noopener noreferrer">https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content</a></li>
+</ul>
+    <div class="pager"><a href="15-web-intrusion-attack-chains-and-containment.html">&larr; 15. Web Intrusion, Attack Chains, and Containment</a><a href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

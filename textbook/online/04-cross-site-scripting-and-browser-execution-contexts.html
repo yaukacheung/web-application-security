@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>4. Cross-Site Scripting and Browser Execution Contexts | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link active" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-4-cross-site-scripting-and-browser-execution-contexts">Chapter 4: Cross-Site Scripting and Browser Execution Contexts</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Distinguish <strong>reflected</strong>, <strong>stored</strong>, and <strong>DOM-based</strong> Cross-Site Scripting (XSS).</li>
+<li>Explain how browser parsing contexts (HTML body, HTML attribute, JavaScript, CSS, URL) change what constitutes dangerous characters.</li>
+<li>Apply context-aware output encoding and safe DOM APIs (<code>textContent</code> vs. <code>innerHTML</code>).</li>
+<li>Configure Content Security Policy (CSP) and <code>HttpOnly</code> cookies as defense-in-depth layers, and understand their limits.</li>
+</ol>
+<hr>
+<h2 id="4-1-why-xss-happens">4.1 Why XSS Happens</h2>
+<p>Cross-Site Scripting (<a href="https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html" target="_blank" rel="noopener noreferrer">MITRE CWE-79</a>) occurs when an application includes untrusted data in a web page without proper validation or <strong>context-aware output encoding</strong>, allowing an attacker to execute arbitrary JavaScript in another user&#x27;s browser session.</p>
+<p>Because the injected script runs inside the victim&#x27;s browser under the application&#x27;s <strong>origin</strong>, it inherits the victim&#x27;s privileges for that origin. The browser has no built-in way to distinguish a legitimate <code>&lt;script&gt;</code> tag written by the developer from an injected tag echoed out of a search parameter or database comment once both are serialized into the same HTML response.</p>
+<p>As a result, an attacker who achieves XSS can read sensitive DOM contents (such as CSRF tokens or account balances), issue authenticated <code>fetch()</code> requests as the victim, steal bearer tokens from <code>localStorage</code>, or perform administrative actions automatically when a privileged user views an infected page.</p>
+<hr>
+<h2 id="4-2-the-three-types-of-xss">4.2 The Three Types of XSS</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-11-xss-contexts-and-dom.svg" alt="Figure 4.1: Reflected, Stored, and DOM XSS Paths vs. Context-Aware Defenses" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 4.1: Reflected, Stored, and DOM XSS Paths vs. Context-Aware Defenses</figcaption></figure>
+<p>Figure 4.1 contrasts how untrusted input reaches execution across all three XSS classes and where the corresponding defense lives:</p>
+<table><thead><tr><th>Type</th><th>Where Payload Lives</th><th>How It Triggers</th><th>Typical Example</th></tr></thead><tbody><tr><td><strong>Reflected</strong></td><td>In the immediate HTTP request (query string, path, header)</td><td>Victim clicks a crafted link; server echoes input back into the HTML response</td><td>Search page: <code>/search?q=&lt;script&gt;...</code></td></tr><tr><td><strong>Stored (Persistent)</strong></td><td>Saved in a server database, comment, profile, or log viewer</td><td>Any user (or admin) who later views that stored record executes the script</td><td>Forum comment, user bio, support ticket</td></tr><tr><td><strong>DOM-Based</strong></td><td>Never needs to touch server-side rendering; stays in client-side URL/storage</td><td>Client-side JavaScript reads an untrusted <strong>source</strong> (e.g., <code>location.hash</code>) and writes it to an unsafe <strong>sink</strong> (e.g., <code>innerHTML</code>)</td><td>SPA routing or hash-based greeting banner</td></tr></tbody></table>
+<h3 id="sources-and-sinks-in-dom-xss">Sources and Sinks in DOM XSS</h3>
+<p>In DOM-based XSS, look for untrusted <strong>sources</strong> flowing into dangerous <strong>sinks</strong>:</p>
+<ul>
+<li><strong>Common Sources:</strong> <code>location.search</code>, <code>location.hash</code>, <code>document.referrer</code>, <code>window.name</code>, <code>postMessage</code> event data.</li>
+<li><strong>Dangerous Sinks:</strong> <code>element.innerHTML</code>, <code>document.write()</code>, <code>eval()</code>, <code>setTimeout(string)</code>, <code>location.href = untrustedUrl</code> (which executes <code>javascript:</code> URIs).</li>
+</ul>
+<p>Replacing <code>element.innerHTML = name</code> with <code>element.textContent = name</code> neutralizes HTML injection because the browser treats <code>textContent</code> strictly as plain text, not markup.</p>
+<hr>
+<h2 id="4-3-context-aware-output-encoding">4.3 Context-Aware Output Encoding</h2>
+<p>HTML entity encoding (<code>&lt;</code> to <code>&amp;lt;</code>, <code>&gt;</code> to <code>&amp;gt;</code>, <code>&amp;</code> to <code>&amp;amp;</code>, <code>&quot;</code> to <code>&amp;quot;</code>, <code>&#x27;</code> to <code>&amp;#x27;</code>) works when inserting untrusted text into the <strong>HTML body</strong> or a <strong>quoted HTML attribute</strong>. However, HTML encoding alone is <strong>not</strong> enough in other browser contexts:</p>
+<ol>
+<li><strong>Unquoted HTML Attribute:</strong> <code>&lt;input value=USER_INPUT&gt;</code> — spaces or event handlers like <code>onfocus=alert(1)</code> can break out without using <code>&lt;</code> or <code>&gt;</code>. Always quote attributes.</li>
+<li><strong>JavaScript Context:</strong> <code>&lt;script&gt;const name = &quot;USER_INPUT&quot;;&lt;/script&gt;</code> — HTML encoding does not stop <code>&quot;; alert(1); //</code> inside a <code>&lt;script&gt;</code> block, because the JS parser runs after HTML parsing. Pass data via JSON-encoded <code>&lt;script type=&quot;application/json&quot;&gt;</code> blocks or <code>data-*</code> attributes read by <code>dataset</code>.</li>
+<li><strong>URL Context:</strong> <code>&lt;a href=&quot;USER_INPUT&quot;&gt;</code> — HTML-encoding <code>javascript:alert(1)</code> still leaves a valid <code>javascript:</code> URI that executes when clicked. Always validate the URL scheme against an allow-list (<code>http:</code>, <code>https:</code>, or relative paths).</li>
+</ol>
+<p>Modern templating engines (React JSX, Angular, Jinja2 with autoescape, Go <code>html/template</code>) apply context-aware escaping by default, but escape hatches such as <code>dangerouslySetInnerHTML</code>, <code>[innerHTML]</code>, <code>|safe</code>, or <code>v-html</code> bypass that protection.</p>
+<h3 id="html-sanitizers-and-mutation-xss-mxss">HTML Sanitizers and Mutation XSS (mXSS)</h3>
+<p>When an application intentionally accepts rich HTML (such as a blog editor or wiki), output encoding alone would display raw <code>&lt;b&gt;</code> tags as text. Instead, teams use an <strong>allow-list HTML sanitizer</strong> such as <strong>DOMPurify</strong> that parses HTML into a DOM tree, strips dangerous tags (<code>&lt;script&gt;</code>, <code>&lt;iframe&gt;</code>, <code>&lt;svg&gt;</code>) and event attributes (<code>onload</code>, <code>onerror</code>), and re-serializes safe markup.</p>
+<p>Never write regex-based HTML filters (for example, stripping <code>&lt;script&gt;</code> with <code>replace()</code>). Browsers tolerate malformed HTML and automatically repair broken nesting—a behavior exploited by <strong>Mutation XSS (mXSS)</strong>, where benign-looking input mutates into an executable <code>&lt;script&gt;</code> or <code>onerror</code> handler when the browser&#x27;s HTML parser re-parses it. Because HTML, SVG, MathML, and CSS parsers follow distinct tokenization rules, parser differentials across browser contexts are a recurring source of client-side bypasses. Modern browsers also offer <strong>Trusted Types</strong> (<code>Content-Security-Policy: require-trusted-types-for &#x27;script&#x27;</code>) to restrict dangerous DOM sinks like <code>innerHTML</code> so only policy-approved objects can reach them.</p>
+<hr>
+<h2 id="4-4-defense-in-depth-httponly-and-content-security-policy">4.4 Defense in Depth: <code>HttpOnly</code> and Content Security Policy</h2>
+<h3 id="httponly-cookies"><code>HttpOnly</code> Cookies</h3>
+<p>Setting <code>HttpOnly</code> on a session cookie prevents <code>document.cookie</code> from reading it via JavaScript. While this stops simple cookie-theft payloads, <strong>XSS can still force the browser to make authenticated requests</strong> using <code>fetch()</code> (because the browser attaches <code>HttpOnly</code> cookies automatically). <code>HttpOnly</code> limits impact; it does not fix XSS.</p>
+<h3 id="content-security-policy-csp">Content Security Policy (CSP)</h3>
+<p>A <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CSP" target="_blank" rel="noopener noreferrer">Content Security Policy</a> header tells the browser which script sources are allowed to execute:</p>
+<pre><code class="language-http">Content-Security-Policy: default-src &#x27;self&#x27;; script-src &#x27;self&#x27; &#x27;nonce-r4nd0mV4lue&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;self&#x27;;</code></pre>
+<p>Key rules for an effective CSP:</p>
+<ul>
+<li>Avoid <code>&#x27;unsafe-inline&#x27;</code> and <code>&#x27;unsafe-eval&#x27;</code> in <code>script-src</code>, as they allow injected inline scripts to run.</li>
+<li>Use cryptographic <strong>nonces</strong> (regenerated on every response) or <strong>hashes</strong> for legitimate inline scripts.</li>
+<li>Restrict <code>object-src &#x27;none&#x27;</code> and <code>base-uri &#x27;self&#x27;</code> to prevent plugin abuse and <code>&lt;base&gt;</code> tag hijacking.</li>
+</ul>
+<p>CSP is a strong second layer of defense, not a replacement for output encoding.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Reflected, stored, and DOM-based XSS differ in how payloads reach the browser but share the same root cause: unencoded or unsafe context insertion.</li>
+<li>Output encoding must match the exact browser context (HTML body, quoted attribute, JavaScript, or URL scheme).</li>
+<li>Content Security Policy (CSP) with nonces, <code>HttpOnly</code> cookies, and Trusted Types provide defense in depth.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Examine a client-side script that reads <code>location.hash</code> into <code>element.innerHTML</code> and a template rendering <code>&lt;a href=&quot;USER_URL&quot;&gt;</code>. Propose the exact safe DOM API and URL-scheme check for both.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why does <code>HttpOnly</code> on a session cookie not completely neutralize an XSS vulnerability?</li>
+<li>Give an example of an untrusted DOM source and a dangerous DOM sink, and show the safe alternative.</li>
+<li>Why does HTML entity encoding fail to protect <code>&lt;a href=&quot;USER_INPUT&quot;&gt;</code> against <code>javascript:</code> URLs?</li>
+<li>What makes <code>&#x27;unsafe-inline&#x27;</code> weaken a Content Security Policy against XSS?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>MITRE CWE-79 (CWE Top 25) — <a href="https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html" target="_blank" rel="noopener noreferrer">https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html</a></li>
+<li>OWASP Cheat Sheet Series: <em>Cross Site Scripting Prevention</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html</a></li>
+<li>MDN Web Docs: <em>Content Security Policy (CSP) implementation</em> — <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CSP" target="_blank" rel="noopener noreferrer">https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CSP</a></li>
+<li>OWASP WSTG v4.2: <em>Testing for Cross Site Scripting</em> — <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting</a></li>
+</ul>
+    <div class="pager"><a href="03-input-validation-encoding-and-sql-injection.html">&larr; 3. Input Validation, Encoding, and SQL Injection</a><a href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

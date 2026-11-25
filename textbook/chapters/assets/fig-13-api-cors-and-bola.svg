@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 240" width="820" height="240" role="img" aria-label="API Authorization and CORS Boundary">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 1.8; rx: 8; }
+    .ok { fill: #f0fdf4; stroke: #16a34a; stroke-width: 1.8; rx: 8; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #334155; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#a13); }
+  </style>
+  <defs><marker id="a13" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="820" height="240" fill="#ffffff"/>
+  <text x="410" y="24" class="lbl" style="font-size:15px;">Figure 11.1: API Boundary Controls (CORS Allow-List, BOLA, and BOPLA)</text>
+
+  <rect x="20" y="65" width="160" height="110" class="box"/>
+  <text x="100" y="95" class="lbl">SPA / API Client</text>
+  <text x="100" y="114" class="sub">Origin: app.example</text>
+  <text x="100" y="133" class="sub">PATCH /api/profile</text>
+  <text x="100" y="150" class="sub">+ Bearer JWT</text>
+
+  <rect x="220" y="65" width="175" height="110" class="ok"/>
+  <text x="307" y="92" class="lbl">1. Edge &amp; CORS Gate</text>
+  <text x="307" y="111" class="sub">Exact Origin allow-list</text>
+  <text x="307" y="128" class="sub">(Never reflect Origin)</text>
+  <text x="307" y="145" class="sub">Rate limit &amp; size cap</text>
+
+  <rect x="435" y="65" width="175" height="110" class="ok"/>
+  <text x="522" y="92" class="lbl">2. AuthZ &amp; Schema</text>
+  <text x="522" y="111" class="sub">Verify JWT aud/iss/exp</text>
+  <text x="522" y="128" class="sub">BOLA: check owner_id</text>
+  <text x="522" y="145" class="sub">BOPLA: allow-list fields</text>
+
+  <rect x="650" y="65" width="150" height="110" class="box"/>
+  <text x="725" y="92" class="lbl">3. DTO Response</text>
+  <text x="725" y="111" class="sub">Project safe fields</text>
+  <text x="725" y="128" class="sub">Omit passwordHash</text>
+  <text x="725" y="145" class="sub">and internal flags</text>
+
+  <line x1="180" y1="120" x2="217" y2="120" class="arr"/>
+  <line x1="395" y1="120" x2="432" y2="120" class="arr"/>
+  <line x1="610" y1="120" x2="647" y2="120" class="arr"/>
+
+  <text x="410" y="208" class="sub">Explicit input schemas stop mass assignment on write; DTO projections stop excessive data exposure on read.</text>
+</svg>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>13. Security Logging, Monitoring, Incident Response, and WAFs | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link active" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-13-security-logging-monitoring-incident-response-and-wafs">Chapter 13: Security Logging, Monitoring, Incident Response, and WAFs</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Identify which security events must be logged and which sensitive values must be <strong>redacted</strong> (<a href="https://top10.owasp.org/2021/A09_2021-Security_Logging_and_Monitoring_Failures/" target="_blank" rel="noopener noreferrer">OWASP A09:2021</a>).</li>
+<li>Design structured, tamper-resistant logs with correlation IDs aligned to <a href="https://csrc.nist.gov/pubs/sp/800/92/final" target="_blank" rel="noopener noreferrer">NIST SP 800-92</a>.</li>
+<li>Write high-signal detection rules that avoid alert fatigue during web incident triage.</li>
+<li>Evaluate the capabilities and bypass limitations of Web Application Firewalls (WAFs).</li>
+</ol>
+<hr>
+<h2 id="13-1-why-visibility-matters">13.1 Why Visibility Matters</h2>
+<p>Preventive controls fail eventually. When an application has no reliable logging or alerting—<a href="https://top10.owasp.org/2021/A09_2021-Security_Logging_and_Monitoring_Failures/" target="_blank" rel="noopener noreferrer">OWASP Top 10:2021 A09 (Security Logging and Monitoring Failures)</a>—defenders cannot answer basic incident questions: <em>When did the attack start? Which accounts were accessed? Did the attacker succeed or only probe?</em></p>
+<p>Security logging differs from standard operational debugging. Operational logs track application crashes and latency; <strong>security audit logs</strong> record identity, authorization decisions, and state changes so responders can reconstruct an attacker&#x27;s timeline. Without centralized, tamper-resistant security telemetry, attackers can probe endpoints, enumerate object IDs, or abuse stolen credentials for weeks before anyone notices.</p>
+<hr>
+<h2 id="13-2-what-to-log-and-what-never-to-log">13.2 What to Log—and What Never to Log</h2>
+<p>Per <a href="https://csrc.nist.gov/pubs/sp/800/92/final" target="_blank" rel="noopener noreferrer">NIST SP 800-92 (Guide to Computer Security Log Management)</a> and the <a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Logging Cheat Sheet</a>, applications should emit structured logs (such as JSON) with synchronized UTC timestamps, source IP, user/session ID, HTTP method, route, status code, and a <strong>correlation ID</strong> tying frontend requests to backend queries.</p>
+<h3 id="high-value-security-events">High-Value Security Events</h3>
+<ul>
+<li>Authentication successes and failures (including password resets and MFA changes).</li>
+<li>Authorization denials (<code>403 Forbidden</code>) and unexpected access-control exceptions.</li>
+<li>Input validation failures on critical fields, unusual <code>5xx</code> spikes, and administrative actions (role changes, API key creation, data exports).</li>
+</ul>
+<h3 id="sensitive-data-that-must-never-be-logged">Sensitive Data That Must Never Be Logged</h3>
+<ul>
+<li>Plaintext passwords, session cookies, JWTs, API keys, or credit card numbers.</li>
+<li>Full <code>Authorization</code> headers or unredacted PII unless legally required and access-controlled.</li>
+</ul>
+<p>Also guard against <strong>log injection (CWE-117)</strong>: sanitize or JSON-encode newline characters (<code>\r</code>, <code>\n</code>) in user-supplied fields (like <code>User-Agent</code> or <code>username</code>) so attackers cannot forge fake log entries or corrupt log parsers.</p>
+<hr>
+<h2 id="13-3-detection-engineering-and-alert-quality">13.3 Detection Engineering and Alert Quality</h2>
+<p>Logging everything without tuning alerts creates <strong>alert fatigue</strong>—analysts ignore noisy dashboards and miss real intrusions. Good detection notes focus on <strong>behavioral signals</strong>, not just single-request signatures:</p>
+<ul>
+<li><strong>Credential stuffing / spraying:</strong> High rate of <code>401</code> responses across many usernames from one IP/ASN, or many failures for one user followed by a sudden success.</li>
+<li><strong>IDOR / enumeration:</strong> One authenticated session requesting hundreds of sequential object IDs (<code>/api/invoices/1001..1250</code>) and receiving repeated <code>200</code>/<code>403</code> responses.</li>
+<li><strong>Exploitation follow-through:</strong> A <code>500</code> error or unusual query parameter followed by outbound network connections or anomalous admin creation.</li>
+<li><strong>Parser and path-traversal probing:</strong> Repeated <code>400</code>/<code>403</code>/<code>404</code> responses containing encoded traversal sequences (<code>%2e%2e%2f</code>) or unexpected internal headers (<code>x-middleware-subrequest</code>).</li>
+</ul>
+<p>Centralize logs off the web server into a write-once or centralized SIEM store so an attacker who compromises the host cannot erase local log files. Retain logs long enough to support post-incident timelines—many breaches go undetected for weeks before forensic triage begins.</p>
+<hr>
+<h2 id="13-4-web-application-firewalls-wafs-and-siem-telemetry">13.4 Web Application Firewalls (WAFs) and SIEM Telemetry</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-15-waf-and-siem-telemetry.svg" alt="Figure 13.1: Edge WAF Filtering vs. Structured Application Logging and SIEM" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 13.1: Edge WAF Filtering vs. Structured Application Logging and SIEM</figcaption></figure>
+<p>As shown in Figure 13.1, an edge WAF filters known syntax signatures and volumetric floods before traffic hits application threads, while the application server emits structured, redacted JSON logs with correlation IDs to an off-host SIEM capable of detecting behavioral attacks such as credential stuffing and sequential IDOR sweeps.</p>
+<p>A <strong>Web Application Firewall (WAF)</strong> inspects HTTP/HTTPS traffic in front of the application and blocks or alerts on suspicious patterns (such as common SQLi/XSS signatures or anomalous request rates).</p>
+<h3 id="what-a-waf-does-well">What a WAF Does Well</h3>
+<ul>
+<li><strong>Virtual patching:</strong> Buys engineering teams time to deploy a real code fix after a new CVE is disclosed.</li>
+<li><strong>Bot and rate-limit enforcement:</strong> Drops obvious automated scanners and volumetric credential-stuffing traffic before it hits application threads.</li>
+</ul>
+<h3 id="what-a-waf-cannot-fix">What a WAF Cannot Fix</h3>
+<ul>
+<li><strong>Business logic and authorization flaws:</strong> A WAF cannot tell whether User A is authorized to view <code>/api/orders/1042</code> (IDOR).</li>
+<li><strong>Parser differentials and bypasses:</strong> Attackers use encoding tricks, alternate HTTP methods, JSON/XML nesting, or payload fragmentation to slip past regex signatures.</li>
+</ul>
+<p>A WAF is a <strong>compensating and detective layer</strong>, never a substitute for parameterized queries, output encoding, and server-side access control.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Emit structured JSON logs with UTC timestamps, correlation IDs, and neutralized newlines (preventing CWE-117 log injection).</li>
+<li>Never log plaintext passwords, session cookies, JWTs, or <code>Authorization</code> headers.</li>
+<li>Treat WAFs as compensating syntax filters; pair them with off-host SIEM alerts for behavioral attacks.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Design a JSON log schema for authentication and authorization events, specifying which fields are captured, which are redacted, and one SIEM alert rule for IDOR enumeration.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why should security logs use structured JSON and correlation IDs rather than unstructured plain-text strings?</li>
+<li>Name three sensitive values that must be redacted before writing HTTP request metadata to logs.</li>
+<li>Why can a WAF not reliably detect or block an IDOR vulnerability?</li>
+<li>What is log injection, and how does structured JSON logging prevent it?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP Top 10:2021 — <em>A09:2021 Security Logging and Monitoring Failures</em> — <a href="https://top10.owasp.org/2021/A09_2021-Security_Logging_and_Monitoring_Failures/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/A09_2021-Security_Logging_and_Monitoring_Failures/</a></li>
+<li>NIST SP 800-92: <em>Guide to Computer Security Log Management</em> — <a href="https://csrc.nist.gov/pubs/sp/800/92/final" target="_blank" rel="noopener noreferrer">https://csrc.nist.gov/pubs/sp/800/92/final</a></li>
+<li>OWASP Cheat Sheet Series: <em>Logging</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html</a></li>
+</ul>
+    <div class="pager"><a href="12-secure-sdlc-dependency-risk-and-supply-chain.html">&larr; 12. Secure SDLC, Dependency Risk, and Supply Chain</a><a href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

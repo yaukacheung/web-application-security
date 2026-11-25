@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 240" width="820" height="240" role="img" aria-label="Web Intrusion Lifecycle and Containment Checkpoints">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 2; rx: 8; }
+    .def { fill: #eff6ff; stroke: #1d4ed8; stroke-width: 1.5; rx: 6; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #334155; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#ar); }
+  </style>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="820" height="240" fill="#ffffff"/>
+  <text x="410" y="24" class="lbl" style="font-size:15px;">Figure 15.1: Web Intrusion Attack Chain and Containment Checkpoints</text>
+
+  <rect x="20" y="55" width="175" height="72" class="box"/>
+  <text x="107" y="82" class="lbl">1. Initial Foothold</text>
+  <text x="107" y="100" class="sub">SQLi, Upload, SSRF,</text>
+  <text x="107" y="115" class="sub">or Stolen Credentials</text>
+
+  <rect x="220" y="55" width="175" height="72" class="box"/>
+  <text x="307" y="82" class="lbl">2. Execution &amp; Persist</text>
+  <text x="307" y="100" class="sub">Web Shell, Cron/Task,</text>
+  <text x="307" y="115" class="sub">or Rogue Admin User</text>
+
+  <rect x="420" y="55" width="175" height="72" class="box"/>
+  <text x="507" y="82" class="lbl">3. Discovery &amp; Access</text>
+  <text x="507" y="100" class="sub">Env Vars, DB Creds,</text>
+  <text x="507" y="115" class="sub">Internal Service Pivot</text>
+
+  <rect x="620" y="55" width="175" height="72" class="box"/>
+  <text x="707" y="82" class="lbl">4. Impact / Exfil</text>
+  <text x="707" y="100" class="sub">Data Staging, Dump,</text>
+  <text x="707" y="115" class="sub">or Integrity Tampering</text>
+
+  <line x1="195" y1="91" x2="217" y2="91" class="arr"/>
+  <line x1="395" y1="91" x2="417" y2="91" class="arr"/>
+  <line x1="595" y1="91" x2="617" y2="91" class="arr"/>
+
+  <rect x="20" y="150" width="175" height="58" class="def"/>
+  <text x="107" y="174" class="lbl">Patch &amp; Revoke</text>
+  <text x="107" y="191" class="sub">WAF / Fix / MFA</text>
+
+  <rect x="220" y="150" width="175" height="58" class="def"/>
+  <text x="307" y="174" class="lbl">Immutable Containers</text>
+  <text x="307" y="191" class="sub">Read-only FS &amp; FIM</text>
+
+  <rect x="420" y="150" width="175" height="58" class="def"/>
+  <text x="507" y="174" class="lbl">Secret Rotation</text>
+  <text x="507" y="191" class="sub">Least Privilege IAM</text>
+
+  <rect x="620" y="150" width="175" height="58" class="def"/>
+  <text x="707" y="174" class="lbl">Egress &amp; SIEM Alerts</text>
+  <text x="707" y="191" class="sub">NIST SP 800-61r3</text>
+</svg>

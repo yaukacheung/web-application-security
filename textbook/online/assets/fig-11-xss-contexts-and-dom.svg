@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" width="820" height="260" role="img" aria-label="Reflected, Stored, and DOM XSS Flows">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 1.8; rx: 8; }
+    .fix { fill: #f0fdf4; stroke: #16a34a; stroke-width: 1.6; rx: 6; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #334155; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#a11); }
+  </style>
+  <defs><marker id="a11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="820" height="260" fill="#ffffff"/>
+  <text x="410" y="24" class="lbl" style="font-size:15px;">Figure 4.1: Reflected, Stored, and DOM XSS Paths vs. Context-Aware Defenses</text>
+
+  <!-- Reflected -->
+  <rect x="20" y="50" width="160" height="52" class="box"/>
+  <text x="100" y="72" class="lbl">1. Reflected XSS</text>
+  <text x="100" y="89" class="sub">URL ?q= echoed in HTML</text>
+  <line x1="180" y1="76" x2="225" y2="76" class="arr"/>
+  <rect x="228" y="50" width="240" height="52" class="box"/>
+  <text x="348" y="72" class="lbl">Server Template Renders Response</text>
+  <text x="348" y="89" class="sub">HTML / Attribute / JS / URL Context</text>
+  <line x1="468" y1="76" x2="515" y2="76" class="arr"/>
+  <rect x="518" y="50" width="280" height="52" class="fix"/>
+  <text x="658" y="72" class="lbl" style="fill:#15803d;">Context-Aware Encoding + CSP Nonce</text>
+  <text x="658" y="89" class="sub">Escape per context; allow-list http/https URLs</text>
+
+  <!-- Stored -->
+  <rect x="20" y="118" width="160" height="52" class="box"/>
+  <text x="100" y="140" class="lbl">2. Stored XSS</text>
+  <text x="100" y="157" class="sub">Payload saved in DB record</text>
+  <line x1="180" y1="144" x2="225" y2="144" class="arr"/>
+  <rect x="228" y="118" width="240" height="52" class="box"/>
+  <text x="348" y="140" class="lbl">Later Viewer Loads Stored Page</text>
+  <text x="348" y="157" class="sub">Comment, bio, or admin log viewer</text>
+  <line x1="468" y1="144" x2="515" y2="144" class="arr"/>
+  <rect x="518" y="118" width="280" height="52" class="fix"/>
+  <text x="658" y="140" class="lbl" style="fill:#15803d;">Encode on Output / DOMPurify for HTML</text>
+  <text x="658" y="157" class="sub">Never trust stored DB strings as safe markup</text>
+
+  <!-- DOM -->
+  <rect x="20" y="186" width="160" height="52" class="box"/>
+  <text x="100" y="208" class="lbl">3. DOM-Based XSS</text>
+  <text x="100" y="225" class="sub">Source: location.hash / search</text>
+  <line x1="180" y1="212" x2="225" y2="212" class="arr"/>
+  <rect x="228" y="186" width="240" height="52" class="box"/>
+  <text x="348" y="208" class="lbl">Client JS Writes to Unsafe Sink</text>
+  <text x="348" y="225" class="sub">innerHTML / eval() / location.href</text>
+  <line x1="468" y1="212" x2="515" y2="212" class="arr"/>
+  <rect x="518" y="186" width="280" height="52" class="fix"/>
+  <text x="658" y="208" class="lbl" style="fill:#15803d;">Safe Sinks (textContent) + Trusted Types</text>
+  <text x="658" y="225" class="sub">Treats input strictly as text, never HTML</text>
+</svg>

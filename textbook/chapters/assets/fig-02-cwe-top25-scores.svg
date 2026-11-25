@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" width="760" height="250" role="img" aria-label="2025 MITRE CWE Top 25 Web Weakness Scores">
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; font-weight: 700; fill: #0f172a; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 600; fill: #1e293b; }
+    .val { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; }
+    .src { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #64748b; }
+    .axis { stroke: #cbd5e1; stroke-width: 1; }
+  </style>
+  <rect width="760" height="250" fill="#ffffff"/>
+  <text x="24" y="28" class="title">Figure 3.1: Top 3 Weaknesses in the 2025 MITRE CWE Top 25 (All Web-Centric)</text>
+
+  <line x1="250" y1="50" x2="250" y2="195" class="axis"/>
+  <line x1="250" y1="195" x2="710" y2="195" class="axis"/>
+
+  <!-- CWE-79: 60.38 -> scale 6.5 px per unit = 392.5 -->
+  <text x="24" y="82" class="lbl">#1 CWE-79: Cross-Site Scripting</text>
+  <rect x="250" y="62" width="392" height="30" rx="4" fill="#1d4ed8"/>
+  <text x="652" y="82" class="val">60.38</text>
+
+  <!-- CWE-89: 28.72 -> scale 6.5 = 186.7 -->
+  <text x="24" y="128" class="lbl">#2 CWE-89: SQL Injection</text>
+  <rect x="250" y="108" width="187" height="30" rx="4" fill="#2563eb"/>
+  <text x="447" y="128" class="val">28.72</text>
+
+  <!-- CWE-352: 13.64 -> scale 6.5 = 88.7 -->
+  <text x="24" y="174" class="lbl">#3 CWE-352: CSRF</text>
+  <rect x="250" y="154" width="89" height="30" rx="4" fill="#60a5fa"/>
+  <text x="349" y="174" class="val">13.64</text>
+
+  <text x="24" y="226" class="src">Source: MITRE 2025 CWE Top 25 Most Dangerous Software Weaknesses (cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html).</text>
+</svg>

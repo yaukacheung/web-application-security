@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>14. Scoped Penetration Testing, Evidence, and Reporting | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link active" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-14-scoped-penetration-testing-evidence-and-remediation-reporting">Chapter 14: Scoped Penetration Testing, Evidence, and Remediation Reporting</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Execute a structured web penetration test following <a href="https://csrc.nist.gov/pubs/sp/800/115/final" target="_blank" rel="noopener noreferrer">NIST SP 800-115</a> and <a href="https://wstg.owasp.org/v4.2/" target="_blank" rel="noopener noreferrer">OWASP WSTG v4.2</a>.</li>
+<li>Validate findings manually to eliminate scanner false positives.</li>
+<li>Document findings with minimal, reproducible evidence, clear severity ratings, and engineering-ready remediation guidance.</li>
+<li>Deliver an executive summary and remediation roadmap for both technical and non-technical stakeholders.</li>
+</ol>
+<hr>
+<h2 id="14-1-methodology-from-scope-to-verification">14.1 Methodology: From Scope to Verification</h2>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-16-pentest-methodology.svg" alt="Figure 14.1: Scoped Web Penetration Testing Lifecycle" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 14.1: Scoped Web Penetration Testing Lifecycle</figcaption></figure>
+<p>A professional penetration test is not a race to run automated tools. Following <a href="https://csrc.nist.gov/pubs/sp/800/115/final" target="_blank" rel="noopener noreferrer">NIST SP 800-115</a> and <a href="https://wstg.owasp.org/v4.2/" target="_blank" rel="noopener noreferrer">OWASP WSTG v4.2</a>, an engagement moves through four disciplined phases (Figure 14.1):</p>
+<ol>
+<li><strong>Planning and Rules of Engagement:</strong> Confirm written scope, target URLs/containers, allowed testing windows, test accounts, and emergency contacts.</li>
+<li><strong>Discovery and Attack Surface Mapping:</strong> Walk the application manually with a proxy, inventory endpoints and trust boundaries (Chapter 2), and build a targeted test plan.</li>
+<li><strong>Validation and Controlled Exploitation:</strong> Test hypotheses across authentication, sessions, access control, input handling, browser boundaries, APIs, and server-side requests. Prove impact with the <strong>least intrusive proof</strong> possible—never exfiltrate bulk data or damage availability.</li>
+<li><strong>Reporting and Remediation Verification:</strong> Translate validated findings into clear engineering work and define regression tests to verify the fix.</li>
+</ol>
+<hr>
+<h2 id="14-2-anatomy-of-a-high-quality-finding">14.2 Anatomy of a High-Quality Finding</h2>
+<p>Engineers cannot fix vague complaints like <em>&quot;SQL injection found on site.&quot;</em> Every finding in your midterm practical or capstone report must include ten concrete elements (matching the course capstone rubric):</p>
+<ol>
+<li><strong>Title:</strong> Specific weakness and location (e.g., <em>Unauthenticated IDOR in <code>/api/orders/{id}</code> Exposes Customer Receipts</em>).</li>
+<li><strong>Severity:</strong> Rated consistently (e.g., Critical / High / Medium / Low / Informational) based on exploitability and business impact.</li>
+<li><strong>Affected Asset:</strong> Exact URL, endpoint, HTTP method, and parameter.</li>
+<li><strong>Scope Confirmation:</strong> Verification that the target sits inside the written rules of engagement.</li>
+<li><strong>Description:</strong> Plain-language explanation of the failed security assumption.</li>
+<li><strong>Reproduction Steps:</strong> Numbered, deterministic steps another engineer can follow to reproduce the issue in under five minutes.</li>
+<li><strong>Evidence:</strong> Minimal, redacted HTTP request/response pairs or targeted screenshots proving the claim.</li>
+<li><strong>Impact:</strong> What an attacker could actually achieve (confidentiality, integrity, availability, or regulatory exposure).</li>
+<li><strong>Remediation:</strong> Exact code-level or configuration fix, naming where the control belongs.</li>
+<li><strong>Regression Test Recommendation:</strong> An automated unit, integration, or CI test that prevents the bug from returning.</li>
+</ol>
+<p>A complete, reusable report template appears in <strong>Appendix B</strong>.</p>
+<hr>
+<h2 id="14-3-avoiding-false-positives-and-overclaiming">14.3 Avoiding False Positives and Overclaiming</h2>
+<p>Automated scanners frequently report informational headers or benign reflections as &quot;High&quot; vulnerabilities. Before including any finding in a report:</p>
+<ul>
+<li><strong>Verify manually:</strong> Confirm the behavior with <code>curl</code> or your intercepting proxy.</li>
+<li><strong>Check reachability:</strong> A missing <code>Strict-Transport-Security</code> header on a local <code>http://localhost</code> lab container is expected in local Docker; note the environment context accurately rather than inflating severity.</li>
+<li><strong>State limitations honestly:</strong> If a test could not be completed due to time or scope boundaries, document what was and was not tested.</li>
+</ul>
+<hr>
+<h2 id="14-4-executive-summary-and-remediation-roadmap">14.4 Executive Summary and Remediation Roadmap</h2>
+<p>Technical teams read the individual findings; leadership reads the <strong>Executive Summary</strong> and <strong>Remediation Roadmap</strong>.</p>
+<ul>
+<li><strong>Executive Summary:</strong> 1–2 concise paragraphs covering engagement scope, overall risk posture, the most urgent themes (e.g., systemic missing object-level authorization), and key strengths observed.</li>
+<li><strong>Remediation Roadmap:</strong> Group fixes by priority and effort:</li>
+<li><em>Immediate (0–7 days):</em> Critical/High exposures (unauthenticated admin routes, active SQLi/RCE, leaked secrets).</li>
+<li><em>Short-term (30 days):</em> Systemic authorization middleware, cookie hardening, CSP rollout.</li>
+<li><em>Long-term (60–90 days):</em> CI/CD SAST/SCA gates, centralized logging, developer training.</li>
+</ul>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Follow disciplined scoping, manual mapping, and single-variable validation to eliminate scanner false positives.</li>
+<li>Every finding should pair reproducible steps and minimal redacted evidence with a concrete code fix and regression test.</li>
+<li>Executive summaries translate technical risk into prioritized remediation roadmaps for decision-makers.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Take a raw vulnerability scanner alert for a missing HTTP header on a local test container and rewrite it as an accurate, non-inflated finding note.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why is automated scanner output alone insufficient as evidence in a penetration testing report?</li>
+<li>What are the core sections of a reproducible finding, and why is a regression test recommendation included?</li>
+<li>How should a tester handle a finding that appears severe in isolation but is mitigated or constrained by environment scope?</li>
+<li>Who is the primary audience for the Executive Summary, and how does its focus differ from the Technical Findings section?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>NIST SP 800-115: <em>Technical Guide to Information Security Testing and Assessment</em> — <a href="https://csrc.nist.gov/pubs/sp/800/115/final" target="_blank" rel="noopener noreferrer">https://csrc.nist.gov/pubs/sp/800/115/final</a></li>
+<li>OWASP Web Security Testing Guide (WSTG v4.2) — <a href="https://wstg.owasp.org/v4.2/" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/</a></li>
+<li>Course Capstone Specification: <code>project/capstone_penetration_testing_project.md</code></li>
+</ul>
+    <div class="pager"><a href="13-logging-monitoring-incident-response-and-wafs.html">&larr; 13. Security Logging, Monitoring, Incident Response, and WAFs</a><a href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

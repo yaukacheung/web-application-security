@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3. Input Validation, Encoding, and SQL Injection | Web Application Security</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+<a class="brand" href="index.html">Web Application Security</a>
+<div class="controls">
+<button onclick="toggleTheme()">Theme</button>
+<button onclick="window.print()">Print / PDF</button>
+</div>
+<input id="nav-search" type="search" placeholder="Filter chapters...">
+<div class="nav-group">Front Matter</div>
+<a class="nav-link" href="00-preface.html">Preface &amp; Safety Model</a>
+<div class="nav-group">Part I: Foundations &amp; Injection</div>
+<a class="nav-link" href="01-ethics-authorization-and-http-foundations.html">1. Ethics, Authorization, and HTTP Foundations</a>
+<a class="nav-link" href="02-web-architecture-threat-modeling-and-reconnaissance.html">2. Web Architecture, Threat Modeling, and Reconnaissance</a>
+<a class="nav-link active" href="03-input-validation-encoding-and-sql-injection.html">3. Input Validation, Encoding, and SQL Injection</a>
+<a class="nav-link" href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts</a>
+<div class="nav-group">Part II: Identity &amp; Access Control</div>
+<a class="nav-link" href="05-authentication-design-and-password-security.html">5. Authentication Design and Password Security</a>
+<a class="nav-link" href="06-session-management-and-cookie-security.html">6. Session Management and Cookie Security</a>
+<a class="nav-link" href="07-access-control-and-idor.html">7. Access Control and Object-Level Authorization</a>
+<div class="nav-group">Part III: Browser, Server &amp; APIs</div>
+<a class="nav-link" href="08-csrf-clickjacking-and-browser-security-controls.html">8. CSRF, Clickjacking, and Browser Defenses</a>
+<a class="nav-link" href="09-file-upload-path-traversal-and-server-side-file-risks.html">9. File Upload, Path Traversal, and Server-Side File Handling</a>
+<a class="nav-link" href="10-ssrf-deserialization-and-server-side-abuse.html">10. SSRF, Deserialization, and Backend Trust</a>
+<a class="nav-link" href="11-api-security-and-modern-application-patterns.html">11. API Security and Modern Application Patterns</a>
+<div class="nav-group">Part IV: Lifecycle, Intrusion &amp; Defense</div>
+<a class="nav-link" href="12-secure-sdlc-dependency-risk-and-supply-chain.html">12. Secure SDLC, Dependency Risk, and Supply Chain</a>
+<a class="nav-link" href="13-logging-monitoring-incident-response-and-wafs.html">13. Security Logging, Monitoring, Incident Response, and WAFs</a>
+<a class="nav-link" href="14-penetration-testing-methodology-and-reporting.html">14. Scoped Penetration Testing, Evidence, and Reporting</a>
+<a class="nav-link" href="15-web-intrusion-attack-chains-and-containment.html">15. Web Intrusion, Attack Chains, and Containment</a>
+<a class="nav-link" href="16-transport-cryptography-tls-and-web-hardening.html">16. Transport Cryptography, TLS, and Modern Web Hardening</a>
+<div class="nav-group">Appendices</div>
+<a class="nav-link" href="appendix-a-lab-environment.html">Appendix A: Local Docker Lab Environment</a>
+<a class="nav-link" href="appendix-b-penetration-testing-report-template.html">Appendix B: Penetration Testing Report Template</a>
+<a class="nav-link" href="appendix-c-standards-and-references.html">Appendix C: Master Standards and References</a>
+<a class="nav-link" href="appendix-d-glossary.html">Appendix D: Glossary of Key Terms</a>
+<a class="nav-link" href="appendix-e-review-question-answers.html">Appendix E: Review Question Answers</a>
+</aside>
+  <main class="content">
+    <h1 id="chapter-3-input-validation-encoding-and-sql-injection">Chapter 3: Input Validation, Encoding, and SQL Injection</h1>
+<h2 id="learning-objectives">Learning Objectives</h2>
+<p>By the end of this chapter, you should be able to:</p>
+<ol>
+<li>Explain <strong>parser confusion</strong> and why mixing untrusted data with command syntax causes injection vulnerabilities.</li>
+<li>Distinguish input validation, output encoding, and parameterized queries, and explain where each belongs.</li>
+<li>Identify in-band, error-based, and blind SQL injection patterns in vulnerable code.</li>
+<li>Remediate SQL injection using prepared statements and safe ORM patterns, and explain why string escaping or blocklists fail.</li>
+</ol>
+<hr>
+<h2 id="3-1-parser-confusion-the-root-cause-of-injection">3.1 Parser Confusion: The Root Cause of Injection</h2>
+<p>Every injection vulnerability—SQL injection, OS command injection, LDAP injection, or cross-site scripting—shares the same structural flaw: <strong>the application mixes untrusted user data into a string that a downstream parser interprets as code or commands</strong>.</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-19-sqli-parser-boundary.svg" alt="Figure 3.2: Parser Confusion vs. Parameterized Queries" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 3.2: Parser Confusion vs. Parameterized Queries</figcaption></figure>
+<p>Figure 3.2 contrasts the two mechanisms: with string interpolation, untrusted characters alter the SQL syntax tree directly; with a parameterized statement, the database compiles the SQL template first and binds the input strictly as literal data.</p>
+<p>Under <a href="https://top10.owasp.org/2021/A03_2021-Injection/" target="_blank" rel="noopener noreferrer">OWASP Top 10:2021 A03 (Injection)</a> and <a href="https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html" target="_blank" rel="noopener noreferrer">MITRE CWE-89</a>, SQL injection remains one of the most damaging weaknesses because a single query parser boundary often guards the entire database. As shown in Figure 3.1, the top three weaknesses in the 2025 MITRE CWE Top 25 are all web-centric (<code>CWE-79</code> XSS, <code>CWE-89</code> SQL Injection, and <code>CWE-352</code> CSRF).</p>
+<figure style="margin:1.5rem 0;text-align:center;"><img src="assets/fig-02-cwe-top25-scores.svg" alt="Figure 3.1: Top 3 Weaknesses in the 2025 MITRE CWE Top 25" style="max-width:100%;height:auto;border:1px solid var(--border,#e5e7eb);border-radius:8px;"><figcaption style="font-size:0.85rem;color:var(--muted,#6b7280);margin-top:0.4rem;">Figure 3.1: Top 3 Weaknesses in the 2025 MITRE CWE Top 25</figcaption></figure>
+<h3 id="real-world-case-studies-moveit-transfer-cve-2023-34362-and-php-cgi-cve-2024-4577">Real-World Case Studies: MOVEit Transfer (<code>CVE-2023-34362</code>) and PHP-CGI (<code>CVE-2024-4577</code>)</h3>
+<ul>
+<li><strong>Progress MOVEit Transfer (<code>CVE-2023-34362</code>, 2023):</strong> An unauthenticated SQL injection vulnerability in the MOVEit Transfer web interface allowed attackers to manipulate backend SQL queries (MySQL, Microsoft SQL Server, or Azure SQL) and chain database access into deploying the <code>LEMURLOOT</code> ASP.NET web shell (<a href="https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-158a" target="_blank" rel="noopener noreferrer">CISA Advisory AA23-158A</a>, <a href="https://nvd.nist.gov/vuln/detail/cve-2023-34362" target="_blank" rel="noopener noreferrer">NVD</a>).</li>
+<li><strong>Windows PHP-CGI Argument Injection (<code>CVE-2024-4577</code>, 2024):</strong> A parser-confusion flaw in Windows PHP-CGI allowed query-string characters to be converted via Windows &quot;Best-Fit&quot; character mapping into command-line option flags (such as <code>-d</code>), bypassing earlier protections (<code>CVE-2012-1823</code>) and enabling unauthenticated remote code execution (<a href="https://www.cve.org/CVERecord?id=CVE-2024-4577" target="_blank" rel="noopener noreferrer">CVE-2024-4577</a>). Both cases illustrate why strict separation between untrusted input and downstream interpreters—whether SQL engines or CLI argument parsers—is non-negotiable.</li>
+</ul>
+<hr>
+<h2 id="3-2-input-validation-vs-parameterization">3.2 Input Validation vs. Parameterization</h2>
+<p>Developers often confuse <strong>input validation</strong> with <strong>injection prevention</strong>. They serve different roles:</p>
+<ul>
+<li><strong>Input Validation</strong> checks whether incoming data matches expected format, type, length, and business rules on the server before processing. Prefer <strong>allow-lists</strong> (e.g., <code>status</code> must be one of <code>[&quot;open&quot;, &quot;closed&quot;]</code>, or <code>age</code> must parse as an integer between <code>0</code> and <code>120</code>) over <strong>deny-lists</strong> (blocking <code>&#x27;</code>, <code>--</code>, or <code>SELECT</code>), because attackers routinely bypass deny-lists using encoding, case variation, or alternate SQL syntax.</li>
+<li><strong>Parameterization (Prepared Statements)</strong> enforces strict separation between query structure and data values at the database driver level. Even if a user&#x27;s legitimate last name is <code>O&#x27;Brien</code>—which contains a single quote—a parameterized query treats <code>O&#x27;Brien</code> strictly as a literal string value, never as SQL syntax.</li>
+</ul>
+<p>Validation supports defense in depth, but <strong>parameterization is the primary defense against SQL injection</strong>, as documented in the <a href="https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP SQL Injection Prevention Cheat Sheet</a>.</p>
+<hr>
+<h2 id="3-3-how-sql-injection-happens-in-code">3.3 How SQL Injection Happens in Code</h2>
+<p>Consider a vulnerable Python/SQLite query built by string formatting:</p>
+<pre><code class="language-python"># VULNERABLE: User input is concatenated directly into the SQL command
+query = f&quot;SELECT id, username, role FROM users WHERE username = &#x27;{username}&#x27; AND password_hash = &#x27;{pw_hash}&#x27;&quot;
+cursor.execute(query)</code></pre>
+<p>If a user submits <code>admin&#x27; --</code> as <code>username</code>, the resulting SQL string becomes:</p>
+<pre><code class="language-sql">SELECT id, username, role FROM users WHERE username = &#x27;admin&#x27; --&#x27; AND password_hash = &#x27;...&#x27;</code></pre>
+<p>The <code>--</code> sequence comments out the password check entirely, authenticating the caller as <code>admin</code>.</p>
+<h3 id="common-sql-injection-techniques">Common SQL Injection Techniques</h3>
+<ol>
+<li><strong>In-Band (UNION-based):</strong> When query results are rendered back in the HTTP response, an attacker uses <code>UNION SELECT</code> to append rows from other tables (after matching column count and compatible types).</li>
+<li><strong>Error-Based:</strong> Verbose database error messages returned to the browser leak table names, column names, SQL dialect, or extracted values.</li>
+<li><strong>Blind (Boolean-Based and Time-Based):</strong> When the application suppresses both data and error messages, attackers infer true/false conditions by observing subtle differences in page content (<code>AND 1=1</code> vs. <code>AND 1=2</code>) or response latency (e.g., <code>SLEEP()</code> or <code>pg_sleep()</code>).</li>
+</ol>
+<hr>
+<h2 id="3-4-defensive-controls-and-orm-pitfalls">3.4 Defensive Controls and ORM Pitfalls</h2>
+<h3 id="prepared-statements-parameterized-queries">Prepared Statements (Parameterized Queries)</h3>
+<p>In a parameterized query, the SQL template is compiled or bound separately from the parameters:</p>
+<pre><code class="language-python"># SECURE: Query structure and parameters are passed separately
+query = &quot;SELECT id, username, role FROM users WHERE username = ? AND password_hash = ?&quot;
+cursor.execute(query, (username, pw_hash))</code></pre>
+<p>In Node.js (<code>pg</code> or <code>mysql2</code>), PHP (<code>PDO</code>), and Java (<code>PreparedStatement</code>), the same principle applies: use placeholders (<code>$1</code>, <code>?</code>) rather than string interpolation.</p>
+<h3 id="where-orms-still-fail">Where ORMs Still Fail</h3>
+<p>Object-Relational Mappers (ORMs) like Sequelize, SQLAlchemy, Hibernate, or Prisma parameterize standard CRUD methods by default. However, developers reintroduce SQL injection when they:</p>
+<ul>
+<li>Drop down to raw SQL helpers (e.g., <code>sequelize.query(&quot;SELECT * FROM users WHERE name = &quot; + input)</code>).</li>
+<li>Interpolate <strong>identifiers</strong> such as <code>ORDER BY</code> column names or <code>ASC</code>/<code>DESC</code> directions, because SQL parameters cannot bind table or column names. For dynamic sorting, map user input through a strict server-side allow-list dictionary:</li>
+</ul>
+<pre><code class="language-python">ALLOWED_SORT_COLUMNS = {&quot;created_at&quot;: &quot;created_at&quot;, &quot;price&quot;: &quot;price&quot;}
+sort_col = ALLOWED_SORT_COLUMNS.get(user_sort, &quot;created_at&quot;)</code></pre>
+<h3 id="second-order-sql-injection-and-nosql-operator-injection">Second-Order SQL Injection and NoSQL Operator Injection</h3>
+<p>Two related injection patterns frequently appear in modern applications:</p>
+<ul>
+<li><strong>Second-Order SQL Injection:</strong> User input is safely inserted into the database using a parameterized query (e.g., registering username <code>admin&#x27;--</code>), but a later background job or reporting query reads that stored value from the database and concatenates it into a raw SQL string. Every query—not just the initial HTTP handler—must be parameterized.</li>
+<li><strong>NoSQL Operator Injection:</strong> Document databases such as MongoDB accept structured JSON query objects. If an Express/Node.js handler passes <code>req.body</code> directly into <code>db.users.findOne({ username: req.body.username, password: req.body.password })</code>, a caller sending <code>{&quot;username&quot;: &quot;admin&quot;, &quot;password&quot;: {&quot;$ne&quot;: &quot;&quot;}}</code> injects a <code>$ne</code> (not-equal) query operator and bypasses authentication. Validate that expected scalar inputs are strictly strings (<code>typeof input === &quot;string&quot;</code>) before passing them to database drivers.</li>
+</ul>
+<h3 id="error-handling">Error Handling</h3>
+<p>Never return raw database stack traces or SQL syntax errors to the client. Log the detailed error server-side with a correlation ID and return a generic <code>400</code> or <code>500</code> response to the user.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Injection occurs when untrusted input alters the syntax tree of a downstream parser.</li>
+<li>Parameterized queries (prepared statements) are the primary defense against SQL injection; allow-list validation supports defense in depth.</li>
+<li>Dynamic SQL identifiers (<code>ORDER BY</code> columns) and second-order queries require strict allow-lists and consistent parameterization.</li>
+</ul>
+<h2 id="applied-exercise">Applied Exercise</h2>
+<p>Audit a sample search endpoint that interpolates a <code>sort</code> query parameter into <code>ORDER BY</code>, rewrite it using a strict allow-list dictionary, and explain why <code>?</code> placeholders cannot bind column names.</p>
+<h2 id="review-questions">Review Questions</h2>
+<ol>
+<li>Why do deny-list filters (such as stripping the word <code>SELECT</code> or <code>&#x27;</code>) routinely fail to stop SQL injection?</li>
+<li>How does a parameterized query prevent an apostrophe in a legitimate name like <code>O&#x27;Connor</code> from breaking the query?</li>
+<li>Why can SQL placeholders (<code>?</code>) not be used for dynamic <code>ORDER BY</code> column names, and how should developers secure dynamic sorting?</li>
+<li>What is the difference between error-based and boolean-based blind SQL injection?</li>
+</ol>
+<h2 id="references">References</h2>
+<ul>
+<li>OWASP Top 10:2021 — <em>A03:2021 Injection</em> — <a href="https://top10.owasp.org/2021/A03_2021-Injection/" target="_blank" rel="noopener noreferrer">https://top10.owasp.org/2021/A03_2021-Injection/</a></li>
+<li>OWASP Cheat Sheet Series: <em>SQL Injection Prevention</em> — <a href="https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html</a></li>
+<li>MITRE CWE Top 25 (including CWE-89) — <a href="https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html" target="_blank" rel="noopener noreferrer">https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html</a></li>
+<li>OWASP WSTG v4.2: <em>Testing for SQL Injection</em> — <a href="https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection" target="_blank" rel="noopener noreferrer">https://wstg.owasp.org/v4.2/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection</a></li>
+</ul>
+    <div class="pager"><a href="02-web-architecture-threat-modeling-and-reconnaissance.html">&larr; 2. Web Architecture, Threat Modeling, and Reconnaissance</a><a href="04-cross-site-scripting-and-browser-execution-contexts.html">4. Cross-Site Scripting and Browser Execution Contexts &rarr;</a></div>
+    <footer style="margin-top:2rem;font-size:0.8rem;color:var(--muted);text-align:center;">&copy; 2026 Yau Ka Cheung, M.S. All rights reserved.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

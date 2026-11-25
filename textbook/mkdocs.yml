@@ -1,0 +1,33 @@
+site_name: Web Application Security
+site_description: Senior undergraduate textbook aligned with the 16-week Web Application Security course.
+docs_dir: chapters
+theme:
+  name: readthedocs
+nav:
+  - Preface: 00-preface.md
+  - "Part I: Foundations, Threat Modeling, and Injection":
+    - "1. Ethics, Authorization, and HTTP Foundations": 01-ethics-authorization-and-http-foundations.md
+    - "2. Web Architecture, Threat Modeling, and Reconnaissance": 02-web-architecture-threat-modeling-and-reconnaissance.md
+    - "3. Input Validation, Encoding, and SQL Injection": 03-input-validation-encoding-and-sql-injection.md
+    - "4. Cross-Site Scripting and Browser Execution Contexts": 04-cross-site-scripting-and-browser-execution-contexts.md
+  - "Part II: Identity, Session State, and Access Control":
+    - "5. Authentication Design and Password Security": 05-authentication-design-and-password-security.md
+    - "6. Session Management and Cookie Security": 06-session-management-and-cookie-security.md
+    - "7. Access Control and Object-Level Authorization": 07-access-control-and-idor.md
+  - "Part III: Browser Boundaries, Server-Side Risks, and APIs":
+    - "8. CSRF, Clickjacking, and Browser Defenses": 08-csrf-clickjacking-and-browser-security-controls.md
+    - "9. File Upload, Path Traversal, and Server-Side File Handling": 09-file-upload-path-traversal-and-server-side-file-risks.md
+    - "10. SSRF, Deserialization, and Backend Trust": 10-ssrf-deserialization-and-server-side-abuse.md
+    - "11. API Security and Modern Application Patterns": 11-api-security-and-modern-application-patterns.md
+  - "Part IV: Engineering Lifecycle, Detection, Intrusion Defense, and Practice":
+    - "12. Secure SDLC, Dependency Risk, and Supply Chain": 12-secure-sdlc-dependency-risk-and-supply-chain.md
+    - "13. Security Logging, Monitoring, Incident Response, and WAFs": 13-logging-monitoring-incident-response-and-wafs.md
+    - "14. Scoped Penetration Testing, Evidence, and Reporting": 14-penetration-testing-methodology-and-reporting.md
+    - "15. Web Intrusion, Attack Chains, and Containment": 15-web-intrusion-attack-chains-and-containment.md
+    - "16. Transport Cryptography, TLS, and Modern Web Hardening": 16-transport-cryptography-tls-and-web-hardening.md
+  - Appendices:
+    - "Appendix A: Local Docker Lab Environment": appendix-a-lab-environment.md
+    - "Appendix B: Penetration Testing Report Template": appendix-b-penetration-testing-report-template.md
+    - "Appendix C: Master Standards and References": appendix-c-standards-and-references.md
+    - "Appendix D: Glossary of Key Terms": appendix-d-glossary.md
+    - "Appendix E: Review Question Answers": appendix-e-review-question-answers.md

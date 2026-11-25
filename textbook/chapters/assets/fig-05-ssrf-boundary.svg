@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 230" width="800" height="230" role="img" aria-label="SSRF Boundary and Egress Control">
+  <style>
+    .box { fill: #f8fafc; stroke: #1e293b; stroke-width: 2; rx: 8; }
+    .lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; fill: #475569; text-anchor: middle; }
+    .arr { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#a); }
+    .blk { stroke: #dc2626; stroke-width: 2; stroke-dasharray: 5,4; fill: none; }
+  </style>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/></marker></defs>
+  <rect width="800" height="230" fill="#ffffff"/>
+  <text x="400" y="24" class="lbl" style="font-size:15px;">Figure 10.1: SSRF Trust Boundary and Egress Allow-List Architecture</text>
+
+  <rect x="25" y="75" width="150" height="80" class="box"/>
+  <text x="100" y="108" class="lbl">Client Request</text>
+  <text x="100" y="126" class="sub">Submits partner ID</text>
+  <text x="100" y="142" class="sub">or target URL</text>
+
+  <rect x="225" y="75" width="180" height="80" class="box"/>
+  <text x="315" y="105" class="lbl">Web Application</text>
+  <text x="315" y="123" class="sub">Maps ID -&gt; Allow-list</text>
+  <text x="315" y="139" class="sub">Disables 302 redirects</text>
+
+  <rect x="455" y="75" width="145" height="80" class="box" style="stroke:#16a34a;"/>
+  <text x="527" y="105" class="lbl">Egress Proxy</text>
+  <text x="527" y="123" class="sub">Blocks RFC 1918 &amp;</text>
+  <text x="527" y="139" class="sub">link-local metadata</text>
+
+  <rect x="640" y="55" width="135" height="55" class="box" style="stroke:#16a34a;"/>
+  <text x="707" y="80" class="lbl">Approved Partner</text>
+  <text x="707" y="96" class="sub">HTTPS Only</text>
+
+  <rect x="640" y="128" width="135" height="55" class="box" style="stroke:#dc2626;"/>
+  <text x="707" y="153" class="lbl" style="fill:#b91c1c;">Internal / IMDS</text>
+  <text x="707" y="169" class="sub">Blocked at Network</text>
+
+  <line x1="175" y1="115" x2="222" y2="115" class="arr"/>
+  <line x1="405" y1="115" x2="452" y2="115" class="arr"/>
+  <line x1="600" y1="100" x2="637" y2="85" class="arr"/>
+  <line x1="600" y1="130" x2="637" y2="152" class="blk"/>
+</svg>
