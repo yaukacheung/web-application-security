@@ -1,6 +1,6 @@
 # web-application-security
 
-Course materials for a senior-level undergraduate course on Web Application Security.
+Course materials on Web Application Security.
 
 This repository is being built as a complete Markdown-first course with Reveal.js slides, weekly labs, quizzes, exams, Docker-based practice environments, grading rubrics, and CI build automation.
 
@@ -17,19 +17,8 @@ This repository is being built as a complete Markdown-first course with Reveal.j
 - `exams/` - midterm, final, student exam copies, instructor exam copies, answer keys, and supplemental exam bank
 - `project/` - capstone penetration testing project and grading rubrics
 - `docs/` - student guide, instructor guide, and course map
-- `textbook/` - complete 16-chapter publishable textbook, online GitHub Pages edition (`textbook/online/`), and publishing guide
-- `.github/workflows/build-course.yml` - automated slide and handout build workflow
+- `textbook/` - complete 16-chapter publishable textbook, online GitHub Pages edition (`textbook/online/`)
 
-## Course Build Targets
-
-- 16 weekly lecture decks
-- 480 total Reveal.js slides
-- 16 detailed lab manuals
-- 160 weekly quiz questions
-- Midterm exam with 40 multiple choice, 2 short answer, and 1 practical
-- Final exam with 40 multiple choice, 2 short answer, and 1 practical
-- Student-facing and instructor-facing editions for weekly lectures, labs, quizzes, and exams
-- Docker lab stack for OWASP Juice Shop, DVWA, WebGoat, Mutillidae II, and NodeGoat
 
 ## Safety Notice
 
